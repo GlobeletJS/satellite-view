@@ -1,0 +1,45 @@
+{
+  "version": "0.0.0",
+  "files": [
+    "dist"
+  ],
+  "directories": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "npm run build-module",
+    "build-module": "rollup -c build/rollup.config.js",
+    "build-examples": "npm run rollup-examples",
+    "rollup-examples": "cd examples && rollup -c",
+    "postversion": "git push && git push --tags"
+  },
+  "author": "Jeshurun Hembd",
+  "license": "MIT",
+  "devDependencies": {
+    "http-server": "^0.11.1",
+    "rollup": "^1.23.0",
+    "rollup-plugin-glslify": "^1.1.2",
+    "rollup-plugin-node-resolve": "^4.2.4",
+    "spinning-ball": "^0.2.0"
+  },
+  "keywords": [
+    "webgl",
+    "globe",
+    "satellite",
+    "reprojection"
+  ],
+  "dependencies": {
+    "yawgl": "github:jjhembd/yawgl"
+  },
+  "name": "satellite-view",
+  "description": "Re-project a map to a globe with WebGL",
+  "main": "dist/satellite-view.bundle.js",
+  "module": "dist/satellite-view.bundle.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jjhembd/satellite-view.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jjhembd/satellite-view/issues"
+  },
+  "homepage": "https://github.com/jjhembd/satellite-view#readme"
+}
