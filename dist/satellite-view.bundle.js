@@ -456,13 +456,14 @@ function setWebMercatorFactors(params, camLatitude) {
 
 const nMaps = 2; // NOTE: Also hard-coded in shader!
 
-function initSatelliteView(view, radius, mapWidth, mapHeight) {
-  // Input view is an object created by yawgl.initView
+function initSatelliteView(container, radius, mapWidth, mapHeight) {
+  // Input container is an HTML element that will be filled with a canvas
+  //  on which will the view will be rendered
   // Input radius is the (floating point) radius of the spherical Earth
   // Input mapWidth, mapHeight are the pixel dimensions of the maps that
   //  will be supplied to the draw function.
 
-  const canvas = addCanvas(view.element);
+  const canvas = addCanvas(container);
   const gl = canvas.getContext("webgl");
   gl.getExtension('OES_standard_derivatives');
 
@@ -476,7 +477,7 @@ function initSatelliteView(view, radius, mapWidth, mapHeight) {
 
   // Store links to uniforms
   const uniforms = {
-    uMaxRay: view.maxRay,
+    uMaxRay: new Float64Array(2),
 
     uCamGeoPos: new Float64Array(3),
     uCosSinTan: new Float64Array(3),
@@ -488,9 +489,12 @@ function initSatelliteView(view, radius, mapWidth, mapHeight) {
     uMapScales: new Float64Array(2 * nMaps),
   };
 
-  return { draw };
+  return {
+    canvas,
+    draw,
+  };
 
-  function draw(maps, camPos, camMoving) {
+  function draw(maps, camPos, maxRayTan, camMoving) {
     if (maps.length !== nMaps) {
       return console.log("ERROR in renderer.draw: maps array length is wrong!");
     }
@@ -507,7 +511,8 @@ function initSatelliteView(view, radius, mapWidth, mapHeight) {
         Math.sin( camPos[1] ),
         Math.tan( camPos[1] )
     ]);
-    setWebMercatorFactors(uniforms.uMapProjFactors, camPos);
+    uniforms.uMaxRay.set(maxRayTan);
+    setWebMercatorFactors(uniforms.uMapProjFactors, camPos[1]);
 
     // Set uniforms and update textures for each map
     maps.forEach( (map, index) => {

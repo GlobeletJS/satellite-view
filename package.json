@@ -16,10 +16,12 @@
   "license": "MIT",
   "devDependencies": {
     "http-server": "^0.11.1",
-    "rollup": "^1.23.0",
+    "rollup": "^1.23.1",
     "rollup-plugin-glslify": "^1.1.2",
     "rollup-plugin-node-resolve": "^4.2.4",
-    "spinning-ball": "^0.2.0"
+    "spinning-ball": "^0.2.0",
+    "tile-frame": "0.0.1",
+    "tile-rack": "^0.2.0"
   },
   "keywords": [
     "webgl",
