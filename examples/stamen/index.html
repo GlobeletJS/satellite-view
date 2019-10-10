@@ -1,0 +1,38 @@
+<html>
+
+  <head>
+    <title>satellite-view</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="styles.css">
+
+    <script src="main.min.js"></script>
+  </head>
+
+  <body onload="stamen.main()">
+    <form id="coordInput" class="inline-inputs">
+      <label class="text">
+        <span class="boxlabel">Longitude:</span>
+        <input name="lon" type="text" value="-95">&#176;&nbsp;
+      </label>
+      <label class="text">
+        <span class="boxlabel">Latitude:</span>
+        <input name="lat" type="text" value="30">&#176;&nbsp;
+      </label>
+      <label class="text">
+        <span class="boxlabel">Altitude:</span>
+        <input name="alt" type="text" value="15000">km
+      </label>
+    </form>
+
+    <div id="globe"></div>
+
+    <p>
+      Map tiles by <a href="http://stamen.com">Stamen Design</a>, 
+      under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. 
+      Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, 
+      under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.
+    </p>
+  </body>
+
+</html>

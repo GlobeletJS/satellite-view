@@ -22,9 +22,10 @@ function setStyles(element, styles) {
   return element;
 }
 
-// Very similar to greggman's module:
-// https://github.com/greggman/webgl-fundamentals/blob/master/webgl/resources/webgl-utils.js
 function createAttributeSetters(gl, program) {
+  // Very similar to greggman's module:
+  // https://github.com/gfxfundamentals/webgl-fundamentals/blob/master/
+  //  webgl/resources/webgl-utils.js
   var attribSetters = {};
   var numAttribs = gl.getProgramParameter(program, gl.ACTIVE_ATTRIBUTES);
   for (let i = 0; i < numAttribs; i++) {
@@ -69,9 +70,9 @@ function setAttributes(setters, attribs) {
   });
 }
 
-// Very similar to greggman's module:
-// https://github.com/greggman/webgl-fundamentals/blob/master/webgl/resources/webgl-utils.js
 function createUniformSetters(gl, program) {
+  // Very similar to greggman's module:
+  // https://github.com/greggman/webgl-fundamentals/blob/master/webgl/resources/webgl-utils.js
 
   var uniformSetters = {};
   var numUniforms = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS);
@@ -136,7 +137,7 @@ function createUniformSetters(gl, program) {
       case gl.SAMPLER_CUBE:
         if (isArray) {
           var units = [];
-          for (let i = 0; i < uniformInfo.size; i++) { // greggman wrong here!
+          for (let i = 0; i < uniformInfo.size; i++) {
             units.push(textureUnit++);
           }
           return function(bindPoint, units) {
@@ -225,7 +226,7 @@ function loadShader(gl, type, source) {
   return shader;
 }
 
-function drawScene( gl, programInfo, bufferInfo, uniforms, viewport ) {
+function drawScene(gl, programInfo, bufferInfo, uniforms, viewport) {
   // Make a blank canvas that fills the displayed size from CSS
   prepCanvas(gl, viewport);
 
@@ -332,6 +333,48 @@ function initQuadBuffers(gl) {
   };
 }
 
+function setupMipMaps(gl, target, width, height) {
+  // We are using WebGL1 (for compatibility with mobile browsers) which can't
+  // handle mipmapping for non-power-of-2 images. Maybe we should provide
+  // pre-computed mipmaps? see https://stackoverflow.com/a/21540856/10082269
+  if (isPowerOf2(width) && isPowerOf2(height)) {
+    gl.generateMipmap(target);
+    // Clamp to avoid wrapping around poles
+    // TODO: this may not work with circular coordinates?
+    gl.texParameteri(target, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  } else { // Turn off mipmapping 
+    gl.texParameteri(target, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    // Set wrapping to clamp to edge
+    gl.texParameteri(target, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(target, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  }
+  return;
+}
+
+function setTextureAnisotropy(gl, target) {
+  var ext = (
+      gl.getExtension('EXT_texture_filter_anisotropic') ||
+      gl.getExtension('MOZ_EXT_texture_filter_anisotropic') || 
+      gl.getExtension('WEBKIT_EXT_texture_filter_anisotropic')
+      );
+  if (ext) {
+    var maxAnisotropy = gl.getParameter(ext.MAX_TEXTURE_MAX_ANISOTROPY_EXT);
+    // BEWARE: this texParameterf call is slow on Intel integrated graphics.
+    // Avoid this entire function if at all possible.
+    gl.texParameterf(target, ext.TEXTURE_MAX_ANISOTROPY_EXT, 
+        maxAnisotropy);
+  }
+  return;
+}
+
+function isPowerOf2(value) {
+  // This trick uses bitwise operators.
+  // See https://stackoverflow.com/a/30924333/10082269
+  return value && !(value & (value - 1));
+  // For a better explanation, with some errors in the solution, see
+  // https://stackoverflow.com/a/30924360/10082269
+}
+
 function initTexture(gl, width, height) {
   // Initializes a 2D texture object, extending the default gl.createTexture()
   // The GL context and the binding target are implicitly saved in the closure.
@@ -386,48 +429,6 @@ function initTexture(gl, width, height) {
     setupMipMaps(gl, target, image.width, image.height);
     return;
   }
-}
-
-function setupMipMaps(gl, target, width, height) {
-  // We are using WebGL1 (for compatibility with mobile browsers) which can't
-  // handle mipmapping for non-power-of-2 images. Maybe we should provide
-  // pre-computed mipmaps? see https://stackoverflow.com/a/21540856/10082269
-  if (isPowerOf2(width) && isPowerOf2(height)) {
-    gl.generateMipmap(target);
-    // Clamp to avoid wrapping around poles
-    // TODO: this may not work with circular coordinates?
-    gl.texParameteri(target, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  } else { // Turn off mipmapping 
-    gl.texParameteri(target, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    // Set wrapping to clamp to edge
-    gl.texParameteri(target, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(target, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  }
-  return;
-}
-
-function setTextureAnisotropy(gl, target) {
-  var ext = (
-      gl.getExtension('EXT_texture_filter_anisotropic') ||
-      gl.getExtension('MOZ_EXT_texture_filter_anisotropic') || 
-      gl.getExtension('WEBKIT_EXT_texture_filter_anisotropic')
-      );
-  if (ext) {
-    var maxAnisotropy = gl.getParameter(ext.MAX_TEXTURE_MAX_ANISOTROPY_EXT);
-    // BEWARE: this texParameterf call is slow on Intel integrated graphics.
-    // Avoid this entire function if at all possible.
-    gl.texParameterf(target, ext.TEXTURE_MAX_ANISOTROPY_EXT, 
-        maxAnisotropy);
-  }
-  return;
-}
-
-function isPowerOf2(value) {
-  // This trick uses bitwise operators.
-  // See https://stackoverflow.com/a/30924333/10082269
-  return value && !(value & (value - 1));
-  // For a better explanation, with some errors in the solution, see
-  // https://stackoverflow.com/a/30924360/10082269
 }
 
 var vertexSrc = "#define GLSLIFY 1\nattribute vec4 aVertexPosition;\n\nuniform vec2 uMaxRay;\n\nvarying highp vec2 vRayParm;\n\nvoid main(void) {\n  vRayParm.x = aVertexPosition.x * uMaxRay.x;\n  vRayParm.y = aVertexPosition.y * uMaxRay.y;\n  gl_Position = aVertexPosition;\n}\n"; // eslint-disable-line

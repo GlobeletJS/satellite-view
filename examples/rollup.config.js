@@ -1,18 +1,15 @@
 import resolve from 'rollup-plugin-node-resolve';
-import json from 'rollup-plugin-json';
 
 export default [
-//  {
-//    input: '',
-//    plugins: [
-//      resolve(),
-//      commonjs(),
-//      json(),
-//    ],
-//    output: {
-//      file: 'main.min.js',
-//      format: 'iife',
-//      name: 'example',
-//    },
-//  }
+  {
+    input: 'stamen/main.js',
+    plugins: [
+      resolve(),
+    ],
+    output: {
+      file: 'stamen/main.min.js',
+      format: 'iife',
+      name: 'stamen',
+    },
+  }
 ];

@@ -1,0 +1,27 @@
+* {
+  box-sizing: border-box;
+}
+body {
+  border: 0;
+  margin: 20;
+  font-family: sans-serif;
+}
+#globe {
+  width: 640;
+  height: 480;
+  background-color: #404542;
+  position: relative;
+  border: 1px solid black;
+}
+.inline-inputs {
+  font: 16px sans-serif;
+  margin-left: 1ch;
+}
+.inline-inputs input[type=text] {
+  width: 7ch;
+  margin: 0 2px 0 4px;
+  text-align: right;
+}
+.text {
+  margin-right: 2ch;
+}

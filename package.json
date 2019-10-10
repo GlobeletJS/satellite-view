@@ -6,7 +6,7 @@
   "directories": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "npm run build-module",
+    "build": "npm run build-module && npm run build-examples",
     "build-module": "rollup -c build/rollup.config.js",
     "build-examples": "npm run rollup-examples",
     "rollup-examples": "cd examples && rollup -c",
@@ -19,9 +19,8 @@
     "rollup": "^1.23.1",
     "rollup-plugin-glslify": "^1.1.2",
     "rollup-plugin-node-resolve": "^4.2.4",
-    "spinning-ball": "^0.2.0",
     "tile-frame": "0.0.1",
-    "tile-rack": "^0.2.0"
+    "tile-rack": "^0.2.1"
   },
   "keywords": [
     "webgl",
@@ -30,7 +29,7 @@
     "reprojection"
   ],
   "dependencies": {
-    "yawgl": "github:jjhembd/yawgl"
+    "yawgl": "0.0.2"
   },
   "name": "satellite-view",
   "description": "Re-project a map to a globe with WebGL",

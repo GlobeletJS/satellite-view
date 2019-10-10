@@ -32,8 +32,8 @@ initSatelliteView requires the following parameters:
 
 ## API
 Initialization returns an object with the following properties and methods:
-- canvas: Link to the Canvas element on which the view is rendered
-- draw(maps, camPos, maxRayTan, camMoving): Renders the globe on the Canvas. 
+- `canvas`: Link to the Canvas element on which the view is rendered
+- `draw(maps, camPos, maxRayTan, camMoving)`: Renders the globe on the Canvas. 
   Arguments:
   - maps: an array of map objects, where each object has the following
     properties:
