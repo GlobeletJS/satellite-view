@@ -15,6 +15,7 @@ const radius = 6371;
 
 export function main() {
   var maps, requestID;
+  const camPosition = new Float64Array(3);
 
   // Get links to lon/lat/alt inputs and display div
   const coordInput = document.getElementById("coordInput");
@@ -22,15 +23,6 @@ export function main() {
   const view = initView(container, 25.0);
 
   // Setup coordinates interaction
-  const camPosition = new Float64Array(3);
-  coordInput.addEventListener("input", getCoords, false);
-  function getCoords() {
-    let coords = coordInput.elements;
-    camPosition[0] = coords["lon"].value / degrees;
-    camPosition[1] = coords["lat"].value / degrees;
-    camPosition[2] = coords["alt"].value;
-  }
-
   maps = initMaps(mapParams);
 
   const renderer = initSatelliteView(
@@ -39,8 +31,19 @@ export function main() {
     mapParams.width, 
     mapParams.height);
 
+  coordInput.addEventListener("input", getCoords, false);
   getCoords();
-  requestID = requestAnimationFrame(animate);
+
+  function getCoords() {
+    let coords = coordInput.elements;
+    camPosition[0] = coords["lon"].value / degrees;
+    camPosition[1] = coords["lat"].value / degrees;
+    camPosition[2] = coords["alt"].value;
+
+    // Start a rendering loop. Cancel running loops to avoid memory leaks
+    cancelAnimationFrame(requestID);
+    requestID = requestAnimationFrame(animate);
+  }
 
   function animate(time) {
     let resized = view.changed();
@@ -48,6 +51,6 @@ export function main() {
     maps.draw();
     renderer.draw(maps.textures, camPosition, view.maxRay, true);
 
-    requestID = requestAnimationFrame(animate);
+    if (maps.loaded() < 2.0) requestAnimationFrame(animate);
   }
 }

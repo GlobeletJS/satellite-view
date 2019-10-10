@@ -8,7 +8,7 @@ export function initMapArray(mapParams, getTile, numLevels) {
 
   return {
     textures: maps.map( map => map.texture ),
-    loaded: () => maps.reduce( (sum, map) => sum + map.loaded(), 0 ),
+    loaded: () => maps.reduce( (sum, map) => sum + map.frame.loaded(), 0 ),
 
     setCenterZoom,
     drawTiles,

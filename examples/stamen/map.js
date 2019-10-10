@@ -1,9 +1,9 @@
-// Wrapper for maps. Handles projection of spherical coordinates
 import * as projection from "./proj-mercator.js";
 import { initRasterCache } from 'tile-rack';
 import { initMapArray } from "./mapArray.js";
 
 export function initMaps(mapParams) {
+  // Wrapper for maps. Handles projection of spherical coordinates
   const xy = new Float64Array(2);
   const tileSize = mapParams.tileSize;
 
