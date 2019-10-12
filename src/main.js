@@ -1,7 +1,7 @@
 import { addCanvas } from "./dom-util.js";
 import * as yawgl from 'yawgl';
 import { shaders } from "./shaders/shaders.js";
-import { setWebMercatorFactors } from "./proj-factors.js";
+import { getWebMercatorFactors } from "./proj-factors.js";
 
 const nMaps = 2; // NOTE: Also hard-coded in shader!
 
@@ -24,15 +24,9 @@ export function initSatelliteView(container, radius, mapWidth, mapHeight) {
   const textureMaker = () => yawgl.initTexture(gl, mapWidth, mapHeight);
   const textures = Array.from(Array(nMaps), textureMaker);
 
-  // Store links to uniforms
+  // Store links to uniform arrays
   const uniforms = {
     uMaxRay: new Float64Array(2),
-
-    uCamGeoPos: new Float64Array(3),
-    uCosSinTan: new Float64Array(3),
-
-    uMapProjFactors: new Float64Array(2),
-
     uTextureSampler: textures.map(tx => tx.sampler),
     uCamMapPos: new Float64Array(2 * nMaps),
     uMapScales: new Float64Array(2 * nMaps),
@@ -49,19 +43,15 @@ export function initSatelliteView(container, radius, mapWidth, mapHeight) {
     }
     if (!camMoving && !maps.some(map => map.changed)) return;
 
-    // Update uniforms for drawing
-    uniforms.uCamGeoPos.set([
-        camPos[0],  // Not used!
-        camPos[1],
-        camPos[2] / radius
-    ]);
-    uniforms.uCosSinTan.set([
-        Math.cos( camPos[1] ),
-        Math.sin( camPos[1] ),
-        Math.tan( camPos[1] )
-    ]);
+    // Update uniforms related to camera position
+    uniforms.uHnorm = camPos[2] / radius;
+    uniforms.uLat0 = camPos[1];
+    uniforms.uCosLat0 = Math.cos(camPos[1]);
+    uniforms.uSinLat0 = Math.sin(camPos[1]);
+    uniforms.uTanLat0 = Math.tan(camPos[1]);
+
     uniforms.uMaxRay.set(maxRayTan);
-    setWebMercatorFactors(uniforms.uMapProjFactors, camPos[1]);
+    [uniforms.uExpY0, uniforms.uLatErr] = getWebMercatorFactors(camPos[1]);
 
     // Set uniforms and update textures for each map
     maps.forEach( (map, index) => {

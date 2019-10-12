@@ -433,7 +433,7 @@ function initTexture(gl, width, height) {
 
 var vertexSrc = "#define GLSLIFY 1\nattribute vec4 aVertexPosition;\n\nuniform vec2 uMaxRay;\n\nvarying highp vec2 vRayParm;\n\nvoid main(void) {\n  vRayParm.x = aVertexPosition.x * uMaxRay.x;\n  vRayParm.y = aVertexPosition.y * uMaxRay.y;\n  gl_Position = aVertexPosition;\n}\n"; // eslint-disable-line
 
-var fragmentSrc = "#extension GL_OES_standard_derivatives : enable\nprecision highp float;\nprecision highp sampler2D;\n#define GLSLIFY 1\n\nfloat diffSqrt(float x) {\n  // Returns 1 - sqrt(1-x), with special handling for small x\n  float halfx = 0.5 * x;\n  // POTENTIAL SLOWDOWN: Beware per-fragment conditionals!\n  return (abs(x) > 0.1)\n    ? 1.0 - sqrt(1.0 - x)\n    : halfx * (1.0 + 0.5 * halfx * (1.0 + halfx));\n}\n\n// Store 0.5 / PI.\n// NOTE: Nvidia says it would be better to set it as a uniform??\n// https://docs.nvidia.com/drive/nvvib_docs/\n// NVIDIA%20DRIVE%20Linux%20SDK%20Development%20Guide/baggage/\n// tegra_gles2_performance.pdf\nconst float ONEOVERTWOPI = 0.15915493667125702;\n\nfloat smallTan(float x) {\n  // POTENTIAL SLOWDOWN: Beware per-fragment conditionals!\n  return (abs(x) > 0.1)\n    ? tan(x)\n    : x * (1.0 + x * x / 3.0);\n}\n\nfloat log1plusX(float x) {\n  // POTENTIAL SLOWDOWN: Beware per-fragment conditionals!\n  return (abs(x) > 0.15)\n    ? log( 1.0 + max(x, -0.999) )\n    : x * (1.0 - x * (0.5 - x / 3.0 + x * x / 4.0));\n}\n\nuniform vec2 uMapProjFactors; // exp(camY), latitude clipping difference\n\nvec2 projMercator(float dLon, float dLat) {\n  float tandlat = smallTan( 0.5 * (dLat + uMapProjFactors[1]) );\n  float p = tandlat * uMapProjFactors[0];\n  float q = tandlat / uMapProjFactors[0];\n  return vec2(dLon, log1plusX(-p) - log1plusX(q)) * ONEOVERTWOPI;\n}\n\n// NOTE: Uses \"fwidth\" from the  GL_OES_standard_derivatives extension, which\n// must be enabled in the parent program. BUT glslify is confused by extensions\n// in modules. See /issues/46... To prevent fwidth from being renamed, require\n// this module as follows:\n// #pragma glslify: dateline = require(./dateline.glsl,fwidth=fwidth)\n\nfloat dateline(float x1) {\n  // Choose the correct texture coordinate in triangles crossing the\n  // antimeridian of a cylindrical coordinate system\n  // See http://vcg.isti.cnr.it/~tarini/no-seams/\n\n  // Alternate coordinate: forced across the antimeridian\n  float x2 = fract(x1 + 0.5) - 0.5;\n  // Choose the coordinate with the smaller screen-space derivative\n  return (fwidth(x1) < fwidth(x2) + 0.001) ? x1 : x2;\n}\n\nbool inside(vec2 pos) {\n  // Check if the supplied texture coordinate falls inside [0,1] X [0,1]\n  // We adjust the limits slightly to ensure we are 1 pixel away from the edges\n  return (\n      0.001 < pos.x && pos.x < 0.999 &&\n      0.001 < pos.y && pos.y < 0.999 );\n}\n\nfloat threshold(float val, float limit) {\n  float decimal = fract(255.0 * val);\n  float dithered = (decimal < limit)\n    ? 0.0\n    : 1.0;\n  float adjustment = (dithered - decimal) / 255.0;\n  return val + adjustment;\n}\n\nvec3 dither2x2(vec2 position, vec3 color) {\n  // Based on https://github.com/hughsk/glsl-dither/blob/master/2x2.glsl\n  int x = int( mod(position.x, 2.0) );\n  int y = int( mod(position.y, 2.0) );\n  int index = x + y * 2;\n\n  float limit = 0.0;\n  if (index == 0) limit = 0.25;\n  if (index == 1) limit = 0.75;\n  if (index == 2) limit = 1.00;\n  if (index == 3) limit = 0.50;\n\n  // Use limit to toggle color between adjacent 8-bit values\n  return vec3(\n      threshold(color.r, limit),\n      threshold(color.g, limit),\n      threshold(color.b, limit)\n      );\n}\n\nvarying vec2 vRayParm;\n\n// Camera geographic position\nuniform vec3 uCamGeoPos; // [ lon, lat, altitude / earthRadius ]\nuniform vec3 uCosSinTan; // [ cos(lat), sin(lat), tan(lat) ]\n// Texture samplers\nuniform sampler2D uTextureSampler[2];\n// Texture coordinate transform parameters.\nuniform vec2 uCamMapPos[2];\nuniform vec2 uMapScales[2];\n// DON'T FORGET TO SET THE PROJECTION UNIFORM uMapProjFactors\n\nfloat latChange(float lat0, float x, float y, \n    float sinC, float cosC, float cosLat0, float sinLat0, float tanLat0) {\n  float lat, xtan, curveTerm, result;\n  // POTENTIAL SLOWDOWN: Beware per-fragment conditionals!\n  if ( max( abs(sinC), abs(sinC * tanLat0) ) > 0.1 ) {\n    lat = asin(sinLat0 * cosC + y * cosLat0 * sinC);\n    result = lat - lat0;\n  } else {\n    xtan = x * tanLat0;\n    curveTerm = 0.5 * y * (xtan * xtan - y * y / 3.0);\n    result = sinC * (y - sinC * (0.5 * xtan * x + curveTerm * sinC));\n  }\n  return result;\n}\n\nfloat horizonTaper(float gamma) {\n  float visibleRadius = sqrt(gamma);\n  float delta = 4.0 * fwidth(visibleRadius);\n  float alpha = 1.0 - smoothstep(1.0 - delta, 1.0, visibleRadius);\n  return alpha * alpha;\n}\n\nvoid main(void) {\n  float tanAlpha = length(vRayParm);\n  float tan2alpha = tanAlpha * tanAlpha;\n  float gamma = tan2alpha * uCamGeoPos[2] * (2.0 + uCamGeoPos[2]);\n\n  float sinC = (uCamGeoPos[2] + diffSqrt(gamma)) * tanAlpha / (1.0 + tan2alpha);\n  float cosC = sqrt(1.0 - sinC * sinC); // numerically unstable? if sinC << 1\n\n  // Solve for longitude and latitude changes relative to screen center\n  vec2 normPos = normalize(vRayParm); // what if length(vRayParm) = 0?\n  // dLon: beware numerical problems! when sinC << cosC\n  float dLon = atan( normPos.x * sinC, \n      uCosSinTan[0] * cosC - normPos.y * uCosSinTan[1] * sinC );\n  float dLat = latChange( uCamGeoPos[1], normPos.x, normPos.y,\n      sinC, cosC, uCosSinTan[0], uCosSinTan[1], uCosSinTan[2] );\n\n  // Convert dLon, dLat to texture coordinates within each map\n  vec2 dMerc = projMercator(dLon, dLat);\n\n  vec2 texCoord0 = uCamMapPos[0] + uMapScales[0] * dMerc;\n  texCoord0.x = dateline(texCoord0.x);\n  vec2 texCoord1 = uCamMapPos[1] + uMapScales[1] * dMerc;\n  texCoord1.x = dateline(texCoord1.x);\n\n  // Lookup color from the appropriate texture\n  vec4 texelColor = inside(texCoord1) // Are we inside the hi-res texture?\n    ? texture2D(uTextureSampler[1], texCoord1)\n    : texture2D(uTextureSampler[0], texCoord0); // Fall back to lo-res\n\n  // Add dithering and tapering\n  vec3 dithered = dither2x2(gl_FragCoord.xy, cosC * texelColor.rgb);\n  gl_FragColor = vec4(dithered.rgb, texelColor.a) * horizonTaper(gamma);\n}\n"; // eslint-disable-line
+var fragmentSrc = "#extension GL_OES_standard_derivatives : enable\nprecision highp float;\nprecision highp sampler2D;\n#define GLSLIFY 1\n\nfloat diffSqrt(float x) {\n  // Returns 1 - sqrt(1-x), with special handling for small x\n  float halfx = 0.5 * x;\n  // POTENTIAL SLOWDOWN: Beware per-fragment conditionals!\n  return (abs(x) > 0.1) // NOTE: x is ALWAYS >0 ?\n    ? 1.0 - sqrt(1.0 - x)\n    : halfx * (1.0 + 0.5 * halfx * (1.0 + halfx));\n}\n\nuniform float uLat0;\nuniform float uCosLat0;\nuniform float uSinLat0;\nuniform float uTanLat0;\n\nfloat latChange(float x, float y, float sinC, float cosC) {\n  float xtan = x * uTanLat0;\n  float curveTerm = 0.5 * y * (xtan * xtan - y * y / 3.0);\n\n  // POTENTIAL SLOWDOWN: Beware per-fragment conditionals!\n  return (max( abs(sinC), abs(sinC * uTanLat0) ) > 0.1) // TODO: isn't sinC >= 0?\n    ? asin(uSinLat0 * cosC + y * uCosLat0 * sinC) - uLat0\n    : sinC * (y - sinC * (0.5 * xtan * x + curveTerm * sinC));\n}\n\nvec2 xyToLonLat(vec2 xy, float sinC, float cosC) {\n  vec2 pHat = normalize(xy);\n  float dLon = atan(pHat.x * sinC,\n      uCosLat0 * cosC - pHat.y * uSinLat0 * sinC);\n  float dLat = latChange(pHat.x, pHat.y, sinC, cosC);\n  return vec2(dLon, dLat);\n}\n\n// Store 0.5 / PI.\n// NOTE: Nvidia says it would be better to set it as a uniform??\n// https://docs.nvidia.com/drive/nvvib_docs/\n// NVIDIA%20DRIVE%20Linux%20SDK%20Development%20Guide/baggage/\n// tegra_gles2_performance.pdf\nconst float ONEOVERTWOPI = 0.15915493667125702;\n\nfloat smallTan(float x) {\n  // POTENTIAL SLOWDOWN: Beware per-fragment conditionals!\n  return (abs(x) > 0.1)\n    ? tan(x)\n    : x * (1.0 + x * x / 3.0);\n}\n\nfloat log1plusX(float x) {\n  // POTENTIAL SLOWDOWN: Beware per-fragment conditionals!\n  return (abs(x) > 0.15)\n    ? log( 1.0 + max(x, -0.999) )\n    : x * (1.0 - x * (0.5 - x / 3.0 + x * x / 4.0));\n}\n\nuniform float uExpY0;\nuniform float uLatErr; // Difference of clipping to map limit\n\nvec2 projMercator(float dLon, float dLat) {\n  float tandlat = smallTan( 0.5 * (dLat + uLatErr) );\n  float p = tandlat * uExpY0;\n  float q = tandlat / uExpY0;\n  return vec2(dLon, log1plusX(-p) - log1plusX(q)) * ONEOVERTWOPI;\n}\n\n// NOTE: Uses \"fwidth\" from the  GL_OES_standard_derivatives extension, which\n// must be enabled in the parent program. BUT glslify is confused by extensions\n// in modules. See /issues/46... To prevent fwidth from being renamed, require\n// this module as follows:\n// #pragma glslify: dateline = require(./dateline.glsl,fwidth=fwidth)\n\nfloat dateline(float x1) {\n  // Choose the correct texture coordinate in triangles crossing the\n  // antimeridian of a cylindrical coordinate system\n  // See http://vcg.isti.cnr.it/~tarini/no-seams/\n\n  // Alternate coordinate: forced across the antimeridian\n  float x2 = fract(x1 + 0.5) - 0.5;\n  // Choose the coordinate with the smaller screen-space derivative\n  return (fwidth(x1) < fwidth(x2) + 0.001) ? x1 : x2;\n}\n\nbool inside(vec2 pos) {\n  // Check if the supplied texture coordinate falls inside [0,1] X [0,1]\n  // We adjust the limits slightly to ensure we are 1 pixel away from the edges\n  return (\n      0.001 < pos.x && pos.x < 0.999 &&\n      0.001 < pos.y && pos.y < 0.999 );\n}\n\nfloat threshold(float val, float limit) {\n  float decimal = fract(255.0 * val);\n  float dithered = (decimal < limit)\n    ? 0.0\n    : 1.0;\n  float adjustment = (dithered - decimal) / 255.0;\n  return val + adjustment;\n}\n\nvec3 dither2x2(vec2 position, vec3 color) {\n  // Based on https://github.com/hughsk/glsl-dither/blob/master/2x2.glsl\n  int x = int( mod(position.x, 2.0) );\n  int y = int( mod(position.y, 2.0) );\n  int index = x + y * 2;\n\n  float limit = 0.0;\n  if (index == 0) limit = 0.25;\n  if (index == 1) limit = 0.75;\n  if (index == 2) limit = 1.00;\n  if (index == 3) limit = 0.50;\n\n  // Use limit to toggle color between adjacent 8-bit values\n  return vec3(\n      threshold(color.r, limit),\n      threshold(color.g, limit),\n      threshold(color.b, limit)\n      );\n}\n\n// NOTE: Uses \"fwidth\" from the GL_OES_standard_derivatives extension,\n// enabled in the parent program. Require as follows to prevent renaming:\n// #pragma glslify: horizonTaper = require(./horizonTaper,fwidth=fwidth)\n\nfloat horizonTaper(float gamma) {\n  // sqrt(gamma) = tan(ray_angle) / tan(horizon)\n  float horizonRatio = sqrt(gamma);\n  float delta = 4.0 * fwidth(horizonRatio);\n  float alpha = 1.0 - smoothstep(1.0 - delta, 1.0, horizonRatio);\n  return alpha * alpha;\n}\n\nvarying vec2 vRayParm;\n\n// Uniforms: Normalized camera altitude\nuniform float uHnorm;\n// Texture samplers and coordinate transform parameters\nuniform sampler2D uTextureSampler[2];\nuniform vec2 uCamMapPos[2];\nuniform vec2 uMapScales[2];\n// DON'T FORGET TO SET UNIFORMS FOR IMPORTED SUBROUTINES\n\nvoid main(void) {\n  // 0. Pre-compute some values\n  float p = length(vRayParm); // Tangent of ray angle\n  float p2 = p * p;\n  float gamma = p2 * uHnorm * (2.0 + uHnorm);\n  float sinC = (uHnorm + diffSqrt(gamma)) * p / (1.0 + p2);\n  float cosC = sqrt(1.0 - sinC * sinC);\n\n  // 1. Invert for longitude and latitude perturbations relative to camera\n  vec2 dLonLat = xyToLonLat(vRayParm, sinC, cosC);\n\n  // 2. Project dLon, dLat to texture coordinates within each map\n  vec2 dMerc = projMercator(dLonLat[0], dLonLat[1]);\n\n  vec2 texCoord0 = uCamMapPos[0] + uMapScales[0] * dMerc;\n  texCoord0.x = dateline(texCoord0.x);\n  vec2 texCoord1 = uCamMapPos[1] + uMapScales[1] * dMerc;\n  texCoord1.x = dateline(texCoord1.x);\n\n  // 3. Lookup color from the appropriate texture\n  vec4 texelColor = inside(texCoord1) // Are we inside the hi-res texture?\n    ? texture2D(uTextureSampler[1], texCoord1)\n    : texture2D(uTextureSampler[0], texCoord0); // Fall back to lo-res\n\n  // Add cosine shading, dithering, and horizon tapering\n  vec3 dithered = dither2x2(gl_FragCoord.xy, cosC * texelColor.rgb);\n  gl_FragColor = vec4(dithered.rgb, texelColor.a) * horizonTaper(gamma);\n}\n"; // eslint-disable-line
 
 const shaders = { 
   vert: vertexSrc, 
@@ -443,16 +443,15 @@ const shaders = {
 // Maximum latitude for Web Mercator: 85.0113 degrees. Beware rounding!
 const maxMercLat = 2.0 * Math.atan( Math.exp(Math.PI) ) - Math.PI / 2.0;
 
-function setWebMercatorFactors(params, camLatitude) {
+function getWebMercatorFactors(camLatitude) {
   // Clip latitude to map limits
   var clipLat = Math.min(Math.max(-maxMercLat, camLatitude), maxMercLat);
+  var latErr = camLatitude - clipLat;
 
   // camera exp(Y), for converting delta latitude to delta Y
-  params[0] = Math.tan( 0.25 * Math.PI + 0.5 * clipLat );
+  var expY = Math.tan( 0.25 * Math.PI + 0.5 * clipLat );
 
-  // Difference of clipping
-  params[1] = camLatitude - clipLat;
-  return;
+  return [expY, latErr];
 }
 
 const nMaps = 2; // NOTE: Also hard-coded in shader!
@@ -476,15 +475,9 @@ function initSatelliteView(container, radius, mapWidth, mapHeight) {
   const textureMaker = () => initTexture(gl, mapWidth, mapHeight);
   const textures = Array.from(Array(nMaps), textureMaker);
 
-  // Store links to uniforms
+  // Store links to uniform arrays
   const uniforms = {
     uMaxRay: new Float64Array(2),
-
-    uCamGeoPos: new Float64Array(3),
-    uCosSinTan: new Float64Array(3),
-
-    uMapProjFactors: new Float64Array(2),
-
     uTextureSampler: textures.map(tx => tx.sampler),
     uCamMapPos: new Float64Array(2 * nMaps),
     uMapScales: new Float64Array(2 * nMaps),
@@ -501,19 +494,15 @@ function initSatelliteView(container, radius, mapWidth, mapHeight) {
     }
     if (!camMoving && !maps.some(map => map.changed)) return;
 
-    // Update uniforms for drawing
-    uniforms.uCamGeoPos.set([
-        camPos[0],  // Not used!
-        camPos[1],
-        camPos[2] / radius
-    ]);
-    uniforms.uCosSinTan.set([
-        Math.cos( camPos[1] ),
-        Math.sin( camPos[1] ),
-        Math.tan( camPos[1] )
-    ]);
+    // Update uniforms related to camera position
+    uniforms.uHnorm = camPos[2] / radius;
+    uniforms.uLat0 = camPos[1];
+    uniforms.uCosLat0 = Math.cos(camPos[1]);
+    uniforms.uSinLat0 = Math.sin(camPos[1]);
+    uniforms.uTanLat0 = Math.tan(camPos[1]);
+
     uniforms.uMaxRay.set(maxRayTan);
-    setWebMercatorFactors(uniforms.uMapProjFactors, camPos[1]);
+    [uniforms.uExpY0, uniforms.uLatErr] = getWebMercatorFactors(camPos[1]);
 
     // Set uniforms and update textures for each map
     maps.forEach( (map, index) => {

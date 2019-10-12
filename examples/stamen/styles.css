@@ -9,7 +9,7 @@ body {
 #globe {
   width: 640;
   height: 480;
-  background-color: #404542;
+  background-color: #000000;
   position: relative;
   border: 1px solid black;
 }
