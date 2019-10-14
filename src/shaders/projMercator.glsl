@@ -1,8 +1,3 @@
-// Store 0.5 / PI.
-// NOTE: Nvidia says it would be better to set it as a uniform??
-// https://docs.nvidia.com/drive/nvvib_docs/
-// NVIDIA%20DRIVE%20Linux%20SDK%20Development%20Guide/baggage/
-// tegra_gles2_performance.pdf
 const float ONEOVERTWOPI = 0.15915493667125702;
 
 #pragma glslify: smallTan = require(./smallmath/smallTan.glsl)

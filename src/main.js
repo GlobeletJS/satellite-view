@@ -49,9 +49,9 @@ export function initSatelliteView(container, radius, mapWidth, mapHeight) {
     uniforms.uCosLat0 = Math.cos(camPos[1]);
     uniforms.uSinLat0 = Math.sin(camPos[1]);
     uniforms.uTanLat0 = Math.tan(camPos[1]);
+    [uniforms.uExpY0, uniforms.uLatErr] = getWebMercatorFactors(camPos[1]);
 
     uniforms.uMaxRay.set(maxRayTan);
-    [uniforms.uExpY0, uniforms.uLatErr] = getWebMercatorFactors(camPos[1]);
 
     // Set uniforms and update textures for each map
     maps.forEach( (map, index) => {

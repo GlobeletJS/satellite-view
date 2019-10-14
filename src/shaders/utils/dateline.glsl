@@ -1,7 +1,5 @@
 // NOTE: Uses "fwidth" from the  GL_OES_standard_derivatives extension, which
-// must be enabled in the parent program. BUT glslify is confused by extensions
-// in modules. See /issues/46... To prevent fwidth from being renamed, require
-// this module as follows:
+// enabled in the parent program. Require as follows to prevent renaming
 // #pragma glslify: dateline = require(./dateline.glsl,fwidth=fwidth)
 
 float dateline(float x1) {

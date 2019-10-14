@@ -11,7 +11,8 @@ export function initMaps(mapParams) {
   var numCachedTiles = 0;
 
   // Initialize array of 2D map grids
-  const maps = initMapArray(mapParams, cache.retrieve, 2);
+  mapParams.getTile = cache.retrieve;
+  const maps = initMapArray(mapParams, 2);
 
   return {
     textures: maps.textures,

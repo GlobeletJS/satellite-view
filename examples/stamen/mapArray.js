@@ -1,9 +1,9 @@
 import * as tileFrame from 'tile-frame';
 
-export function initMapArray(mapParams, getTile, numLevels) {
+export function initMapArray(mapParams, numLevels) {
   const maps = [];
   for (let i = 0; i < numLevels; i++) {
-    maps[i] = initFrame(mapParams, getTile);
+    maps[i] = initFrame(mapParams);
   }
 
   return {
@@ -38,12 +38,10 @@ export function initMapArray(mapParams, getTile, numLevels) {
   }
 }
 
-function initFrame(mapParams, getTile) {
-  const canvas = document.createElement("canvas");
-  const context = canvas.getContext("2d");
-  const frame = tileFrame.init(mapParams, context, getTile);
+function initFrame(mapParams) {
+  const frame = tileFrame.init(mapParams);
   const texture = {
-    canvas,
+    canvas: frame.canvas,
     camPos: new Float64Array(2),
     scale: new Float64Array(2),
     changed: true,
