@@ -12,6 +12,10 @@ exact equations are replaced by series approximations. These approximations
 are numerically more robust in single-precision floating point math, as used
 by WebGL.
 
+Check out the 
+[live example](https://globeletjs.github.io/satellite-view/examples/stamen/index.html)
+using tiles from [Stamen Maps](http://maps.stamen.com).
+
 ## Installation
 satellite-view is provided as an ESM module import.
 ```javascript
