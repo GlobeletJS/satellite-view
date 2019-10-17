@@ -8,9 +8,9 @@ float latChange(float x, float y, float sinC, float cosC) {
   float curveTerm = 0.5 * y * (xtan * xtan - y * y / 3.0);
 
   // POTENTIAL SLOWDOWN: Beware per-fragment conditionals!
-  return (max( abs(sinC), abs(sinC * uTanLat0) ) > 0.1) // TODO: isn't sinC >= 0?
-    ? asin(uSinLat0 * cosC + y * uCosLat0 * sinC) - uLat0
-    : sinC * (y - sinC * (0.5 * xtan * x + curveTerm * sinC));
+  return (max(sinC, abs(sinC * uTanLat0) ) < 0.1)
+    ? sinC * (y - sinC * (0.5 * xtan * x + curveTerm * sinC))
+    : asin(uSinLat0 * cosC + y * uCosLat0 * sinC) - uLat0;
 }
 
 vec2 xyToLonLat(vec2 xy, float sinC, float cosC) {
