@@ -19,3 +19,5 @@ vec2 xyToLonLat(vec2 xy, float sinC, float cosC) {
   float dLat = latChange(pHat.x, pHat.y, sinC, cosC);
   return vec2(dLon, dLat);
 }
+
+#pragma glslify: export(xyToLonLat)

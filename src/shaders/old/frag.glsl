@@ -1,3 +1,12 @@
+#extension GL_OES_standard_derivatives : enable
+precision highp float;
+precision highp sampler2D;
+
+#pragma glslify: xyToLonLat = require(./inverseProj.glsl)
+#pragma glslify: project = require(./projMercator.glsl)
+#pragma glslify: texLookup = require(./texLookup.glsl,fwidth=fwidth)
+#pragma glslify: dither2x2 = require(./dither2x2.glsl)
+
 float diffSqrt(float x) {
   // Returns 1 - sqrt(1-x), with special handling for small x
   float halfx = 0.5 * x;
@@ -27,8 +36,8 @@ void main(void) {
   // 1. Invert for longitude and latitude perturbations relative to camera
   vec2 dLonLat = xyToLonLat(vRayParm, sinC, cosC);
 
-  // 2. Project to a change in the Mercator coordinates
-  vec2 dMerc = projMercator(dLonLat);
+  // 2. Project dLon, dLat to Mercator coordinate changes
+  vec2 dMerc = project(dLonLat[0], dLonLat[1]);
 
   // 3. Lookup color from the appropriate texture
   vec4 texelColor = texLookup(dMerc);

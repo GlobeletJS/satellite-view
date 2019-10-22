@@ -1,6 +1,7 @@
 import { addCanvas } from "./dom-util.js";
 import * as yawgl from 'yawgl';
-import { shaders } from "./shaders/shaders.js";
+//import { shaders } from "./shaders/old/shaders.js";
+import { buildShader } from "./shaders/buildShader.js";
 import { getWebMercatorFactors } from "./proj-factors.js";
 
 const nMaps = 2; // NOTE: Also hard-coded in shader!
@@ -17,6 +18,8 @@ export function initSatelliteView(container, radius, mapWidth, mapHeight) {
   gl.getExtension('OES_standard_derivatives');
 
   // Initialize shader program
+  const shaders = buildShader(nMaps);
+  console.log(shaders.frag);
   const progInfo = yawgl.initShaderProgram(gl, shaders.vert, shaders.frag);
 
   // Load data into GPU for shaders: attribute buffers, indices, textures

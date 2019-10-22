@@ -431,14 +431,222 @@ function initTexture(gl, width, height) {
   }
 }
 
-var vertexSrc = "#define GLSLIFY 1\nattribute vec4 aVertexPosition;\nuniform vec2 uMaxRay;\n\nvarying highp vec2 vRayParm;\n\nvoid main(void) {\n  vRayParm = uMaxRay * aVertexPosition.xy;\n  gl_Position = aVertexPosition;\n}\n"; // eslint-disable-line
+var vertexSrc = `attribute vec4 aVertexPosition;
+uniform vec2 uMaxRay;
 
-var fragmentSrc = "#extension GL_OES_standard_derivatives : enable\nprecision highp float;\nprecision highp sampler2D;\n#define GLSLIFY 1\n\nfloat diffSqrt(float x) {\n  // Returns 1 - sqrt(1-x), with special handling for small x\n  float halfx = 0.5 * x;\n  // POTENTIAL SLOWDOWN: Beware per-fragment conditionals!\n  return (abs(x) < 0.1) // NOTE: x is ALWAYS >0 ?\n    ? halfx * (1.0 + 0.5 * halfx * (1.0 + halfx))\n    : 1.0 - sqrt(1.0 - x);\n}\n\nuniform float uLat0;\nuniform float uCosLat0;\nuniform float uSinLat0;\nuniform float uTanLat0;\n\nfloat latChange(float x, float y, float sinC, float cosC) {\n  float xtan = x * uTanLat0;\n  float curveTerm = 0.5 * y * (xtan * xtan - y * y / 3.0);\n\n  // POTENTIAL SLOWDOWN: Beware per-fragment conditionals!\n  return (max(sinC, abs(sinC * uTanLat0) ) < 0.1)\n    ? sinC * (y - sinC * (0.5 * xtan * x + curveTerm * sinC))\n    : asin(uSinLat0 * cosC + y * uCosLat0 * sinC) - uLat0;\n}\n\nvec2 xyToLonLat(vec2 xy, float sinC, float cosC) {\n  vec2 pHat = normalize(xy);\n  float dLon = atan(pHat.x * sinC,\n      uCosLat0 * cosC - pHat.y * uSinLat0 * sinC);\n  float dLat = latChange(pHat.x, pHat.y, sinC, cosC);\n  return vec2(dLon, dLat);\n}\n\nconst float ONEOVERTWOPI = 0.15915493667125702;\n\nfloat smallTan(float x) {\n  // POTENTIAL SLOWDOWN: Beware per-fragment conditionals!\n  return (abs(x) < 0.1)\n    ? x * (1.0 + x * x / 3.0)\n    : tan(x);\n}\n\nfloat log1plusX(float x) {\n  // POTENTIAL SLOWDOWN: Beware per-fragment conditionals!\n  return (abs(x) < 0.15)\n    ? x * (1.0 - x * (0.5 - x / 3.0 + x * x / 4.0))\n    : log( 1.0 + max(x, -0.999) );\n}\n\nuniform float uExpY0;\nuniform float uLatErr; // Difference of clipping to map limit\n\nvec2 projMercator(float dLon, float dLat) {\n  float tandlat = smallTan( 0.5 * (dLat + uLatErr) );\n  float p = tandlat * uExpY0;\n  float q = tandlat / uExpY0;\n  return vec2(dLon, log1plusX(-p) - log1plusX(q)) * ONEOVERTWOPI;\n}\n\n// NOTE: Uses \"fwidth\" from the  GL_OES_standard_derivatives extension, which\n// enabled in the parent program. Require as follows to prevent renaming\n// #pragma glslify: dateline = require(./dateline.glsl,fwidth=fwidth)\n\nfloat dateline(float x1) {\n  // Choose the correct texture coordinate in triangles crossing the\n  // antimeridian of a cylindrical coordinate system\n  // See http://vcg.isti.cnr.it/~tarini/no-seams/\n\n  // Alternate coordinate: forced across the antimeridian\n  float x2 = fract(x1 + 0.5) - 0.5;\n  // Choose the coordinate with the smaller screen-space derivative\n  return (fwidth(x1) < fwidth(x2) + 0.001) ? x1 : x2;\n}\n\nbool inside(vec2 pos) {\n  // Check if the supplied texture coordinate falls inside [0,1] X [0,1]\n  // We adjust the limits slightly to ensure we are 1 pixel away from the edges\n  return (\n      0.001 < pos.x && pos.x < 0.999 &&\n      0.001 < pos.y && pos.y < 0.999 );\n}\n\nfloat threshold(float val, float limit) {\n  float decimal = fract(255.0 * val);\n  float dithered = (decimal < limit)\n    ? 0.0\n    : 1.0;\n  float adjustment = (dithered - decimal) / 255.0;\n  return val + adjustment;\n}\n\nvec3 dither2x2(vec2 position, vec3 color) {\n  // Based on https://github.com/hughsk/glsl-dither/blob/master/2x2.glsl\n  int x = int( mod(position.x, 2.0) );\n  int y = int( mod(position.y, 2.0) );\n  int index = x + y * 2;\n\n  float limit = 0.0;\n  if (index == 0) limit = 0.25;\n  if (index == 1) limit = 0.75;\n  if (index == 2) limit = 1.00;\n  if (index == 3) limit = 0.50;\n\n  // Use limit to toggle color between adjacent 8-bit values\n  return vec3(\n      threshold(color.r, limit),\n      threshold(color.g, limit),\n      threshold(color.b, limit)\n      );\n}\n\n// NOTE: Uses \"fwidth\" from the GL_OES_standard_derivatives extension,\n// enabled in the parent program. Require as follows to prevent renaming:\n// #pragma glslify: horizonTaper = require(./horizonTaper,fwidth=fwidth)\n\nfloat horizonTaper(float gamma) {\n  // sqrt(gamma) = tan(ray_angle) / tan(horizon)\n  float horizonRatio = sqrt(gamma);\n  float delta = 4.0 * fwidth(horizonRatio);\n  float alpha = 1.0 - smoothstep(1.0 - delta, 1.0, horizonRatio);\n  return alpha * alpha;\n}\n\nvarying vec2 vRayParm;\n\n// Uniforms: Normalized camera altitude\nuniform float uHnorm;\n// Texture samplers and coordinate transform parameters\nuniform sampler2D uTextureSampler[2];\nuniform vec2 uCamMapPos[2];\nuniform vec2 uMapScales[2];\n// DON'T FORGET TO SET UNIFORMS FOR IMPORTED SUBROUTINES\n\nvoid main(void) {\n  // 0. Pre-compute some values\n  float p = length(vRayParm); // Tangent of ray angle\n  float p2 = p * p;\n  float gamma = p2 * uHnorm * (2.0 + uHnorm);\n  float sinC = (uHnorm + diffSqrt(gamma)) * p / (1.0 + p2);\n  float cosC = sqrt(1.0 - sinC * sinC);\n\n  // 1. Invert for longitude and latitude perturbations relative to camera\n  vec2 dLonLat = xyToLonLat(vRayParm, sinC, cosC);\n\n  // 2. Project dLon, dLat to texture coordinates within each map\n  vec2 dMerc = projMercator(dLonLat[0], dLonLat[1]);\n\n  vec2 texCoord0 = uCamMapPos[0] + uMapScales[0] * dMerc;\n  texCoord0.x = dateline(texCoord0.x);\n  vec2 texCoord1 = uCamMapPos[1] + uMapScales[1] * dMerc;\n  texCoord1.x = dateline(texCoord1.x);\n\n  // 3. Lookup color from the appropriate texture\n  vec4 texelColor = inside(texCoord1) // Are we inside the hi-res texture?\n    ? texture2D(uTextureSampler[1], texCoord1)\n    : texture2D(uTextureSampler[0], texCoord0); // Fall back to lo-res\n\n  // Add cosine shading, dithering, and horizon tapering\n  vec3 dithered = dither2x2(gl_FragCoord.xy, cosC * texelColor.rgb);\n  gl_FragColor = vec4(dithered.rgb, texelColor.a) * horizonTaper(gamma);\n}\n"; // eslint-disable-line
+varying highp vec2 vRayParm;
 
-const shaders = { 
-  vert: vertexSrc, 
-  frag: fragmentSrc,
-};
+void main(void) {
+  vRayParm = uMaxRay * aVertexPosition.xy;
+  gl_Position = aVertexPosition;
+}
+`;
+
+var invertSrc = `uniform float uLat0;
+uniform float uCosLat0;
+uniform float uSinLat0;
+uniform float uTanLat0;
+
+float latChange(float x, float y, float sinC, float cosC) {
+  float xtan = x * uTanLat0;
+  float curveTerm = 0.5 * y * (xtan * xtan - y * y / 3.0);
+
+  return (max(sinC, abs(sinC * uTanLat0) ) < 0.1)
+    ? sinC * (y - sinC * (0.5 * xtan * x + curveTerm * sinC))
+    : asin(uSinLat0 * cosC + y * uCosLat0 * sinC) - uLat0;
+}
+
+vec2 xyToLonLat(vec2 xy, float sinC, float cosC) {
+  vec2 pHat = normalize(xy);
+  float dLon = atan(pHat.x * sinC,
+      uCosLat0 * cosC - pHat.y * uSinLat0 * sinC);
+  float dLat = latChange(pHat.x, pHat.y, sinC, cosC);
+  return vec2(dLon, dLat);
+}
+`;
+
+var projectSrc = `const float ONEOVERTWOPI = 0.15915493667125702;
+
+uniform float uExpY0;
+uniform float uLatErr; // Difference of clipping to map limit
+
+float smallTan(float x) {
+  return (abs(x) < 0.1)
+    ? x * (1.0 + x * x / 3.0)
+    : tan(x);
+}
+
+float log1plusX(float x) {
+  return (abs(x) < 0.15)
+    ? x * (1.0 - x * (0.5 - x / 3.0 + x * x / 4.0))
+    : log( 1.0 + max(x, -0.999) );
+}
+
+vec2 projMercator(vec2 dLonLat) {
+  float tandlat = smallTan( 0.5 * (dLonLat[1] + uLatErr) );
+  float p = tandlat * uExpY0;
+  float q = tandlat / uExpY0;
+  return vec2(dLonLat[0], log1plusX(-p) - log1plusX(q)) * ONEOVERTWOPI;
+}
+`;
+
+var texLookup = `uniform sampler2D uTextureSampler[nLod];
+uniform vec2 uCamMapPos[nLod];
+uniform vec2 uMapScales[nLod];
+
+float dateline(float x1) {
+  // Choose the correct texture coordinate in fragments crossing the
+  // antimeridian of a cylindrical coordinate system
+  // See http://vcg.isti.cnr.it/~tarini/no-seams/
+
+  // Alternate coordinate: forced across the antimeridian
+  float x2 = fract(x1 + 0.5) - 0.5;
+  // Choose the coordinate with the smaller screen-space derivative
+  return (fwidth(x1) < fwidth(x2) + 0.001) ? x1 : x2;
+}
+
+//bool inside(vec2 pos) {
+  // Check if the supplied texture coordinate falls inside [0,1] X [0,1]
+  // We adjust the limits slightly to ensure we are 1 pixel away from the edges
+//  return (
+//      0.001 < pos.x && pos.x < 0.999 &&
+//      0.001 < pos.y && pos.y < 0.999 );
+//}
+
+vec4 texLookup(vec2 dMerc) {
+  vec2 texCoords[nLod];
+
+  for (int i = 0; i < nLod; i++) {
+    texCoords[i] = uCamMapPos[i] + uMapScales[i] * dMerc;
+    texCoords[i].x = dateline(texCoords[i].x);
+  }
+
+  return sampleLOD(uTextureSampler, texCoords);
+}
+`;
+
+var dither2x2 = `float threshold(float val, float limit) {
+  float decimal = fract(255.0 * val);
+  float dithered = (decimal < limit)
+    ? 0.0
+    : 1.0;
+  float adjustment = (dithered - decimal) / 255.0;
+  return val + adjustment;
+}
+
+vec3 dither2x2(vec2 position, vec3 color) {
+  // Based on https://github.com/hughsk/glsl-dither/blob/master/2x2.glsl
+  int x = int( mod(position.x, 2.0) );
+  int y = int( mod(position.y, 2.0) );
+  int index = x + y * 2;
+
+  float limit = 0.0;
+  if (index == 0) limit = 0.25;
+  if (index == 1) limit = 0.75;
+  if (index == 2) limit = 1.00;
+  if (index == 3) limit = 0.50;
+
+  // Use limit to toggle color between adjacent 8-bit values
+  return vec3(
+      threshold(color.r, limit),
+      threshold(color.g, limit),
+      threshold(color.b, limit)
+      );
+}
+`;
+
+var fragMain = `float diffSqrt(float x) {
+  // Returns 1 - sqrt(1-x), with special handling for small x
+  float halfx = 0.5 * x;
+  return (x < 0.1)
+    ? halfx * (1.0 + 0.5 * halfx * (1.0 + halfx))
+    : 1.0 - sqrt(1.0 - x);
+}
+
+float horizonTaper(float gamma) {
+  // sqrt(gamma) = tan(ray_angle) / tan(horizon)
+  float horizonRatio = sqrt(gamma);
+  float delta = 2.0 * fwidth(horizonRatio);
+  return 1.0 - smoothstep(1.0 - delta, 1.0, horizonRatio);
+}
+
+varying vec2 vRayParm;
+uniform float uHnorm;
+
+void main(void) {
+  // 0. Pre-compute some values
+  float p = length(vRayParm); // Tangent of ray angle
+  float p2 = p * p;
+  float gamma = p2 * uHnorm * (2.0 + uHnorm);
+  float sinC = (uHnorm + diffSqrt(gamma)) * p / (1.0 + p2);
+  float cosC = sqrt(1.0 - sinC * sinC);
+
+  // 1. Invert for longitude and latitude perturbations relative to camera
+  vec2 dLonLat = xyToLonLat(vRayParm, sinC, cosC);
+
+  // 2. Project to a change in the Mercator coordinates
+  vec2 dMerc = projMercator(dLonLat);
+
+  // 3. Lookup color from the appropriate texture
+  vec4 texelColor = texLookup(dMerc);
+
+  // Add cosine shading, dithering, and horizon tapering
+  vec3 dithered = dither2x2(gl_FragCoord.xy, cosC * texelColor.rgb);
+  gl_FragColor = vec4(dithered.rgb, texelColor.a) * horizonTaper(gamma);
+}
+`;
+
+const header = `
+#extension GL_OES_standard_derivatives : enable
+precision highp float;
+precision highp sampler2D;
+
+`;
+
+function buildShader(nLod) {
+  nLod = Math.max(1, Math.floor(nLod));
+  const lodSrc = insideSrc + setupLOD(nLod) + texLookup;
+
+  const fragmentSrc = header + invertSrc + projectSrc + 
+    lodSrc + dither2x2 + fragMain;
+
+  return {
+    vert: vertexSrc,
+    frag: fragmentSrc,
+  };
+}
+
+function setupLOD(nLod) {
+  // Define function signature, with pre-defined constant
+  var selector = `const int nLod = ${nLod};
+vec4 sampleLOD(sampler2D samplers[${nLod}], vec2 coords[${nLod}]) {
+  return `;
+
+  // Sample from the highest LOD that includes the coordinate
+  for (let i = nLod - 1; i > 0; i--) {
+    selector += `inside(coords[${i}])
+    ? texture2D(samplers[${i}], coords[${i}])
+    : `;
+  }
+  // Add default to lowest LOD
+  selector += `texture2D(samplers[0], coords[0]);`;
+
+  // Close the function block: bracket AND line break
+  selector += `
+}
+`;
+  return selector;
+}
+
+const insideSrc = `
+bool inside(vec2 pos) {
+  // Check if the supplied texture coordinate falls inside [0,1] X [0,1]
+  // We adjust the limits slightly to ensure we are 1 pixel away from the edges
+  return (
+      0.001 < pos.x && pos.x < 0.999 &&
+      0.001 < pos.y && pos.y < 0.999 );
+}
+`;
 
 // Maximum latitude for Web Mercator: 85.0113 degrees. Beware rounding!
 const maxMercLat = 2.0 * Math.atan( Math.exp(Math.PI) ) - Math.PI / 2.0;
@@ -468,6 +676,8 @@ function initSatelliteView(container, radius, mapWidth, mapHeight) {
   gl.getExtension('OES_standard_derivatives');
 
   // Initialize shader program
+  const shaders = buildShader(nMaps);
+  console.log(shaders.frag);
   const progInfo = initShaderProgram(gl, shaders.vert, shaders.frag);
 
   // Load data into GPU for shaders: attribute buffers, indices, textures

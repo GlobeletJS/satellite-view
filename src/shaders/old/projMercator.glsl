@@ -15,9 +15,11 @@ float log1plusX(float x) {
     : log( 1.0 + max(x, -0.999) );
 }
 
-vec2 projMercator(vec2 dLonLat) {
-  float tandlat = smallTan( 0.5 * (dLonLat[1] + uLatErr) );
+vec2 projMercator(float dLon, float dLat) {
+  float tandlat = smallTan( 0.5 * (dLat + uLatErr) );
   float p = tandlat * uExpY0;
   float q = tandlat / uExpY0;
-  return vec2(dLonLat[0], log1plusX(-p) - log1plusX(q)) * ONEOVERTWOPI;
+  return vec2(dLon, log1plusX(-p) - log1plusX(q)) * ONEOVERTWOPI;
 }
+
+#pragma glslify: export(projMercator)
