@@ -1,10 +1,9 @@
 import { addCanvas } from "./dom-util.js";
 import * as yawgl from 'yawgl';
-//import { shaders } from "./shaders/old/shaders.js";
 import { buildShader } from "./shaders/buildShader.js";
 import { getWebMercatorFactors } from "./proj-factors.js";
 
-const nMaps = 2; // NOTE: Also hard-coded in shader!
+const nMaps = 2;
 
 export function initSatelliteView(container, radius, mapWidth, mapHeight) {
   // Input container is an HTML element that will be filled with a canvas
@@ -19,7 +18,6 @@ export function initSatelliteView(container, radius, mapWidth, mapHeight) {
 
   // Initialize shader program
   const shaders = buildShader(nMaps);
-  console.log(shaders.frag);
   const progInfo = yawgl.initShaderProgram(gl, shaders.vert, shaders.frag);
 
   // Load data into GPU for shaders: attribute buffers, indices, textures

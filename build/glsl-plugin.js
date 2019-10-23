@@ -1,17 +1,34 @@
-// Plugin for .glsl files: import as template literals
+// Plugin for .glsl and .js.glsl files
 export function glsl() {
+  return { transform };
+}
+
+function transform(source, id) {
+  // Confirm filename extension is .glsl
+  if (/\.glsl$/.test(id) === false) return;
+
+  const transFunc = (/\.js\.glsl$/.test(id))
+    ? tagTemplateLiteral
+    : templateLiteral;
+
   return {
-    transform( source, id ) {
-      // Confirm filename extension is .glsl
-      if ( /\.glsl$/.test( id ) === false ) return;
-
-      // Export the code as a template literal
-      const code = "export default `" + source + "`";
-
-      return {
-        code: code,
-        map: { mappings: '' }, // No map
-      };
-    }
+    code: transFunc(source),
+    map: { mappings: '' }, // No map
   };
+}
+
+function templateLiteral(source) {
+  // Export as a constant string, but template literal preserves line breaks
+  return "export default `" + source + "`";
+}
+
+function tagTemplateLiteral(source) {
+  // Export as a function that will interpolate values from an args object
+  // NOTE: args MUST be defined where the function is called, with
+  // property names matching the variables in the *.js.glsl file
+  const glslInterp = `function glslInterp(strings, ...expressions) {
+    return strings.reduce( (acc, val, i) => acc + expressions[i-1]() + val );
+  }
+  `;
+  return glslInterp + "export default (args) => glslInterp`" + source + "`";
 }

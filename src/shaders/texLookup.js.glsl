@@ -1,8 +1,8 @@
-const int nTex = 2;
+const int nLod = ${args.nLod};
 
-uniform sampler2D uTextureSampler[nTex];
-uniform vec2 uCamMapPos[nTex];
-uniform vec2 uMapScales[nTex];
+uniform sampler2D uTextureSampler[nLod];
+uniform vec2 uCamMapPos[nLod];
+uniform vec2 uMapScales[nLod];
 
 float dateline(float x1) {
   // Choose the correct texture coordinate in fragments crossing the
@@ -23,17 +23,17 @@ bool inside(vec2 pos) {
       0.001 < pos.y && pos.y < 0.999 );
 }
 
-vec4 texLookup(vec2 dMerc) {
-  vec2 texCoords[nTex];
+vec4 sampleLOD(sampler2D samplers[nLod], vec2 coords[nLod]) {
+  return ${args.buildSelector}texture2D(samplers[0], coords[0]);
+}
 
-  for (int i = 0; i < nTex; i++) {
+vec4 texLookup(vec2 dMerc) {
+  vec2 texCoords[nLod];
+
+  for (int i = 0; i < nLod; i++) {
     texCoords[i] = uCamMapPos[i] + uMapScales[i] * dMerc;
     texCoords[i].x = dateline(texCoords[i].x);
   }
 
-  return inside(texCoords[1]) // Are we inside the hi-res texture?
-    ? texture2D(uTextureSampler[1], texCoords[1])
-    : texture2D(uTextureSampler[0], texCoords[0]); // Fall back to lo-res
+  return sampleLOD(uTextureSampler, texCoords);
 }
-
-#pragma glslify: export(texLookup)
