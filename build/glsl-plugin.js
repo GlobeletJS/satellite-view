@@ -22,13 +22,14 @@ function templateLiteral(source) {
   return "export default `" + source + "`";
 }
 
+const glslInterp = `function glslInterp(strings, ...expressions) {
+  return strings.reduce( (acc, val, i) => acc + expressions[i-1]() + val );
+}
+`;
+
 function tagTemplateLiteral(source) {
   // Export as a function that will interpolate values from an args object
   // NOTE: args MUST be defined where the function is called, with
   // property names matching the variables in the *.js.glsl file
-  const glslInterp = `function glslInterp(strings, ...expressions) {
-    return strings.reduce( (acc, val, i) => acc + expressions[i-1]() + val );
-  }
-  `;
   return glslInterp + "export default (args) => glslInterp`" + source + "`";
 }

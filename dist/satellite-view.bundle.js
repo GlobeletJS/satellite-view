@@ -191,33 +191,26 @@ function initShaderProgram(gl, vsSource, fsSource) {
   gl.linkProgram(shaderProgram);
 
   if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-    alert( 'Unable to initialize the shader program: \n' +
+    throw Error('Unable to initialize the shader program: \n' +
         gl.getProgramInfoLog(shaderProgram) );
-    // This is not very good error handling... should be returning the error
     return null;
   }
 
   return {
     program: shaderProgram,
     attributeSetters: createAttributeSetters(gl, shaderProgram),
-    uniformSetters: createUniformSetters(gl,shaderProgram),
+    uniformSetters: createUniformSetters(gl, shaderProgram),
   };
 }
 
 // create shader of a given type, upload source, compile it
 function loadShader(gl, type, source) {
-  const shader = gl.createShader(type); // no error handling??
-
-  // Send the source to the shader object
+  const shader = gl.createShader(type);
   gl.shaderSource(shader, source);
-
-  // Compile the shader program
   gl.compileShader(shader);
 
-  // Now check for errors
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    // this alert business is sloppy...
-    alert( 'An error occurred compiling the shaders: \n' +
+    throw Error('An error occurred compiling the shaders: \n' +
         gl.getShaderInfoLog(shader) );
     gl.deleteShader(shader);
     return null;
@@ -271,16 +264,21 @@ function prepCanvas(gl, port) {
 
 // Make sure the canvas drawingbuffer is the same size as the display
 // webglfundamentals.org/webgl/lessons/webgl-resizing-the-canvas.html
-function resizeCanvasToDisplaySize(canvas) {
-  let width = canvas.clientWidth;
-  let height = canvas.clientHeight;
-  if (canvas.width !== width || canvas.height !== height) {
-    // Resize drawingbuffer to match resized display
-    canvas.width = width;
-    canvas.height = height;
-    return true;
-  }
-  return false;
+function resizeCanvasToDisplaySize(canvas, multiplier) {
+  // multiplier allows scaling. Example: multiplier = window.devicePixelRatio
+  multiplier = multiplier || 1;
+  multiplier = Math.max(0, multiplier); // Don't allow negative scaling
+
+  const width = Math.floor(canvas.clientWidth * multiplier);
+  const height = Math.floor(canvas.clientHeight * multiplier);
+
+  // Exit if no change
+  if (canvas.width === width && canvas.height === height) return false;
+
+  // Resize drawingbuffer to match resized display
+  canvas.width = width;
+  canvas.height = height;
+  return true;
 }
 
 function initQuadBuffers(gl) {
@@ -491,9 +489,9 @@ vec2 projMercator(vec2 dLonLat) {
 `;
 
 function glslInterp(strings, ...expressions) {
-    return strings.reduce( (acc, val, i) => acc + expressions[i-1]() + val );
-  }
-  var texLookup = (args) => glslInterp`const int nLod = ${args.nLod};
+  return strings.reduce( (acc, val, i) => acc + expressions[i-1]() + val );
+}
+var texLookup = (args) => glslInterp`const int nLod = ${args.nLod};
 
 uniform sampler2D uTextureSampler[nLod];
 uniform vec2 uCamMapPos[nLod];
@@ -659,7 +657,7 @@ function getWebMercatorFactors(camLatitude) {
   return [expY, latErr];
 }
 
-const nMaps = 2; // NOTE: Also hard-coded in shader!
+const nMaps = 2;
 
 function initSatelliteView(container, radius, mapWidth, mapHeight) {
   // Input container is an HTML element that will be filled with a canvas
