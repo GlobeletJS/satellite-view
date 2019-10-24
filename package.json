@@ -37,10 +37,10 @@
   "module": "dist/satellite-view.bundle.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jjhembd/satellite-view.git"
+    "url": "git+https://github.com/GlobeletJS/satellite-view.git"
   },
   "bugs": {
-    "url": "https://github.com/jjhembd/satellite-view/issues"
+    "url": "https://github.com/GlobeletJS/satellite-view/issues"
   },
-  "homepage": "https://github.com/jjhembd/satellite-view#readme"
+  "homepage": "https://github.com/GlobeletJS/satellite-view#readme"
 }

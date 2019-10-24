@@ -35,7 +35,8 @@ satelliteView.init takes a parameters object with the following properties:
 - globeRadius: The (floating point) radius of the spherical Earth. Units must
   match the units of the altitude in the camPos array supplied to the draw
   method. Default: 6371 (km).
-- map: (REQUIRED) An object with the following properties:
+- map: (REQUIRED) An object with the following properties, OR an array of
+  objects where each element has the following properties:
   - canvas: an HTML Canvas element containing a map image
   - camPos: a 2-element array containing the map coordinates of the camera
     position. Map coordinates range from [0, 0] at the top left corner of the
@@ -44,8 +45,6 @@ satelliteView.init takes a parameters object with the following properties:
     to a map covering the whole world
   - changed: a (Boolean) flag indicating whether the map image has changed
     since the last draw call
-  The value provided to .map can also be an array of map objects, where each
-  element in the array has the above properties.
 - pixelRatio: Ratio of the pixel size of the rendered image ([drawingbuffer
   size]) to the CSS display size of the container. Default:
   [window.devicePixelRatio]. Note: if a value is supplied, the pixel ratio
@@ -70,4 +69,4 @@ Initialization returns an object with the following properties and methods:
       - maxRayTan[1] = tan(FOV_y / 2)
   - camMoving: a (Boolean) flag indicating whether the camera position has
     changed since the last draw call
-- setDevicePixelRatio(ratio): sets pixelRatio to the supplied constant value
+- `setDevicePixelRatio(ratio)`: sets pixelRatio to the supplied constant value
