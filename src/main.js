@@ -1,51 +1,43 @@
-import { addCanvas } from "./dom-util.js";
+import { setParams } from "./params.js";
 import * as yawgl from 'yawgl';
 import { buildShader } from "./shaders/buildShader.js";
 import { getWebMercatorFactors } from "./proj-factors.js";
 
-const nMaps = 2;
+export function initSatelliteView(userParams) {
+  const params = setParams(userParams);
 
-export function initSatelliteView(container, radius, mapWidth, mapHeight) {
-  // Input container is an HTML element that will be filled with a canvas
-  //  on which will the view will be rendered
-  // Input radius is the (floating point) radius of the spherical Earth
-  // Input mapWidth, mapHeight are the pixel dimensions of the maps that
-  //  will be supplied to the draw function.
-
-  const canvas = addCanvas(container);
-  const gl = canvas.getContext("webgl");
+  const gl = params.canvas.getContext("webgl");
   gl.getExtension('OES_standard_derivatives');
 
   // Initialize shader program
-  const shaders = buildShader(nMaps);
+  const shaders = buildShader(params.nMaps);
   const progInfo = yawgl.initShaderProgram(gl, shaders.vert, shaders.frag);
 
   // Load data into GPU for shaders: attribute buffers, indices, textures
   const buffers = yawgl.initQuadBuffers(gl);
-  const textureMaker = () => yawgl.initTexture(gl, mapWidth, mapHeight);
-  const textures = Array.from(Array(nMaps), textureMaker);
+  const textures = params.maps.map(map => {
+    return yawgl.initTexture(gl, params.mapWidth, params.mapHeight);
+  });
 
   // Store links to uniform arrays
   const uniforms = {
     uMaxRay: new Float64Array(2),
     uTextureSampler: textures.map(tx => tx.sampler),
-    uCamMapPos: new Float64Array(2 * nMaps),
-    uMapScales: new Float64Array(2 * nMaps),
+    uCamMapPos: new Float64Array(2 * params.nMaps),
+    uMapScales: new Float64Array(2 * params.nMaps),
   };
 
   return {
-    canvas,
+    canvas: gl.canvas,
     draw,
+    setPixelRatio: (ratio) => { params.getPixelRatio = () => ratio; },
   };
 
-  function draw(maps, camPos, maxRayTan, camMoving) {
-    if (maps.length !== nMaps) {
-      return console.log("ERROR in renderer.draw: maps array length is wrong!");
-    }
-    if (!camMoving && !maps.some(map => map.changed)) return;
+  function draw(camPos, maxRayTan, camMoving) {
+    if (!camMoving && !params.maps.some(map => map.changed)) return;
 
     // Update uniforms related to camera position
-    uniforms.uHnorm = camPos[2] / radius;
+    uniforms.uHnorm = camPos[2] / params.globeRadius;
     uniforms.uLat0 = camPos[1];
     uniforms.uCosLat0 = Math.cos(camPos[1]);
     uniforms.uSinLat0 = Math.sin(camPos[1]);
@@ -55,14 +47,14 @@ export function initSatelliteView(container, radius, mapWidth, mapHeight) {
     uniforms.uMaxRay.set(maxRayTan);
 
     // Set uniforms and update textures for each map
-    maps.forEach( (map, index) => {
+    params.maps.forEach( (map, index) => {
       uniforms.uCamMapPos.set(map.camPos, 2 * index);
       uniforms.uMapScales.set(map.scale, 2 * index);
       if (map.changed) textures[index].update(map.canvas);
     });
 
     // Draw the globe
-    yawgl.resizeCanvasToDisplaySize(canvas);
+    yawgl.resizeCanvasToDisplaySize(gl.canvas, params.getPixelRatio());
     yawgl.drawScene(gl, progInfo, buffers, uniforms);
   }
 }

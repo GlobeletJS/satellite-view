@@ -25,11 +25,11 @@ export function main() {
   // Setup coordinates interaction
   maps = initMaps(mapParams);
 
-  const renderer = initSatelliteView(
-    container, 
-    radius,
-    mapParams.width, 
-    mapParams.height);
+  const renderer = initSatelliteView({
+    container: container, 
+    globeRadius: radius,
+    map: maps.textures,
+  });
 
   coordInput.addEventListener("input", getCoords, false);
   getCoords();
@@ -49,7 +49,7 @@ export function main() {
     let resized = view.changed();
     maps.setPosition(camPosition, radius, view);
     maps.draw();
-    renderer.draw(maps.textures, camPosition, view.maxRay, true);
+    renderer.draw(camPosition, view.maxRay, true);
 
     if (maps.loaded() < 2.0) requestAnimationFrame(animate);
   }
