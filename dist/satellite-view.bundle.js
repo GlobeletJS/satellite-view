@@ -650,7 +650,7 @@ function buildShader(nLod) {
 
   // Combine the GLSL-snippets into one shader source
   const fragmentSrc = header + invertSrc + projectSrc + 
-    texLookup(args) + dither2x2 + fragMain;
+    texLookupSrc + dither2x2 + fragMain;
 
   return {
     vert: vertexSrc,
@@ -682,7 +682,7 @@ function getWebMercatorFactors(camLatitude) {
   return [expY, latErr];
 }
 
-function initSatelliteView(userParams) {
+function init(userParams) {
   const params = setParams(userParams);
 
   const gl = params.canvas.getContext("webgl");
@@ -738,4 +738,4 @@ function initSatelliteView(userParams) {
   }
 }
 
-export { initSatelliteView };
+export { init };

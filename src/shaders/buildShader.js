@@ -27,7 +27,7 @@ export function buildShader(nLod) {
 
   // Combine the GLSL-snippets into one shader source
   const fragmentSrc = header + invertSrc + projectSrc + 
-    texLookup(args) + dither2x2 + fragMain;
+    texLookupSrc + dither2x2 + fragMain;
 
   return {
     vert: vertexSrc,

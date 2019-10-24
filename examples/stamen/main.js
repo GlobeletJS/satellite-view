@@ -2,7 +2,7 @@
 
 import { initView } from 'yawgl';
 import { initMaps } from "./map.js";
-import { initSatelliteView } from "../../dist/satellite-view.bundle.js";
+import * as satelliteView from "../../dist/satellite-view.bundle.js";
 const degrees = 180.0 / Math.PI;
 
 const mapParams = {
@@ -25,7 +25,7 @@ export function main() {
   // Setup coordinates interaction
   maps = initMaps(mapParams);
 
-  const renderer = initSatelliteView({
+  const renderer = satelliteView.init({
     container: container, 
     globeRadius: radius,
     map: maps.textures,

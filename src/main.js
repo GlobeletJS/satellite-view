@@ -3,7 +3,7 @@ import * as yawgl from 'yawgl';
 import { buildShader } from "./shaders/buildShader.js";
 import { getWebMercatorFactors } from "./proj-factors.js";
 
-export function initSatelliteView(userParams) {
+export function init(userParams) {
   const params = setParams(userParams);
 
   const gl = params.canvas.getContext("webgl");
