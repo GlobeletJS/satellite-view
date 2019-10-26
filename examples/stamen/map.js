@@ -1,6 +1,6 @@
 import * as projection from "./proj-mercator.js";
 import { initRasterCache } from 'tile-rack';
-import { initMapArray } from "./mapArray.js";
+import { initClipMaps } from 'tile-frame';
 
 export function initMaps(mapParams) {
   // Wrapper for maps. Handles projection of spherical coordinates
@@ -12,7 +12,7 @@ export function initMaps(mapParams) {
 
   // Initialize array of 2D map grids
   mapParams.getTile = cache.retrieve;
-  const maps = initMapArray(mapParams, 2);
+  const maps = initClipMaps(mapParams, 2);
 
   return {
     textures: maps.textures,
