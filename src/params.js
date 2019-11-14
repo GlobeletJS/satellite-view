@@ -15,9 +15,6 @@ export function setParams(userParams) {
     : [userParams.map];
 
   params.nMaps = params.maps.length;
-  params.mapWidth = params.maps[0].canvas.width;
-  params.mapHeight = params.maps[0].canvas.height;
-
   params.canvas = addCanvas(userParams.container);
 
   return params;

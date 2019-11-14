@@ -15,9 +15,6 @@ function setParams(userParams) {
     : [userParams.map];
 
   params.nMaps = params.maps.length;
-  params.mapWidth = params.maps[0].canvas.width;
-  params.mapHeight = params.maps[0].canvas.height;
-
   params.canvas = addCanvas(userParams.container);
 
   return params;
@@ -695,7 +692,7 @@ function init(userParams) {
   // Load data into GPU for shaders: attribute buffers, indices, textures
   const buffers = initQuadBuffers(gl);
   const textures = params.maps.map(map => {
-    return initTexture(gl, params.mapWidth, params.mapHeight);
+    return initTexture(gl, map.canvas.width, map.canvas.height);
   });
 
   // Store links to uniform arrays
@@ -710,6 +707,7 @@ function init(userParams) {
     canvas: gl.canvas,
     draw,
     setPixelRatio: (ratio) => { params.getPixelRatio = () => ratio; },
+    destroy: () => gl.canvas.remove(),
   };
 
   function draw(camPos, maxRayTan, camMoving) {
@@ -733,8 +731,10 @@ function init(userParams) {
     });
 
     // Draw the globe
-    resizeCanvasToDisplaySize(gl.canvas, params.getPixelRatio());
+    var resized = resizeCanvasToDisplaySize(
+      gl.canvas, params.getPixelRatio() );
     drawScene(gl, progInfo, buffers, uniforms);
+    return resized;
   }
 }
 
