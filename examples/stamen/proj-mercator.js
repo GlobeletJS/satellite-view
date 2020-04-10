@@ -1,5 +1,6 @@
 // Maximum latitude for Web Mercator: 85.0113 degrees. Beware rounding!
 const maxMercLat = 2.0 * Math.atan( Math.exp(Math.PI) ) - Math.PI / 2.0;
+const clipLat = (lat) => Math.min(Math.max(-maxMercLat, lat), maxMercLat);
 
 export function scale(geodetic) {
   // Input geodetic is a pointer to a 2- (or 3?)-element array, containing
@@ -8,8 +9,7 @@ export function scale(geodetic) {
   // the sphere at position <geodetic> to a distance in map coordinates.
   // NOTE: ASSUMES a sphere of radius 1! Input distances should be
   //  pre-normalized by the appropriate radius
-  let clipLat = Math.min(Math.max(-maxMercLat, geodetic[1]), maxMercLat);
-  return 1 / (2 * Math.PI * Math.cos(clipLat));
+  return 1 / (2 * Math.PI * Math.cos( clipLat(geodetic[1]) ));
 }
 
 export function lonLatToXY(projected, geodetic) {
@@ -32,9 +32,8 @@ function lonToX(lon) {
 function latToY(lat) {
   // Convert input latitude in radians to a Web Mercator y-coordinate
   // where y = 0 at lat = 85.05113 deg, y = 1 at lat = -85.05113 deg
-  var clipLat = Math.min(Math.max(-maxMercLat, lat), maxMercLat);
   var y = 0.5 - 0.5 / Math.PI * // Note sign flip;
-  Math.log( Math.tan(Math.PI / 4.0 + clipLat / 2.0) );
+  Math.log( Math.tan(Math.PI / 4.0 + clipLat(lat) / 2.0) );
   // Clip range to [0,1], since y does not wrap around
   return Math.min(Math.max(0.0, y), 1.0);
 }

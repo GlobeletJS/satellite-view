@@ -51,6 +51,6 @@ export function main() {
     maps.draw();
     renderer.draw(camPosition, view.maxRay, true);
 
-    if (maps.loaded() < 2.0) requestAnimationFrame(animate);
+    if (maps.loaded() < 1.0) requestAnimationFrame(animate);
   }
 }

@@ -15,10 +15,8 @@
   "author": "Jeshurun Hembd",
   "license": "MIT",
   "devDependencies": {
-    "http-server": "^0.11.1",
-    "rollup": "^1.23.1",
-    "rollup-plugin-glslify": "^1.1.2",
-    "rollup-plugin-node-resolve": "^4.2.4",
+    "rollup": "^2.4.0",
+    "rollup-plugin-node-resolve": "^5.2.0",
     "tile-frame": "^1.1.0",
     "tile-rack": "^0.2.1"
   },
@@ -29,7 +27,7 @@
     "reprojection"
   ],
   "dependencies": {
-    "yawgl": "^0.1.0"
+    "yawgl": "^0.1.2"
   },
   "name": "satellite-view",
   "description": "Re-project a map to a globe with WebGL",
