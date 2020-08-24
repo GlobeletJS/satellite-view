@@ -18,7 +18,8 @@
     "rollup": "^2.4.0",
     "rollup-plugin-node-resolve": "^5.2.0",
     "tile-frame": "^1.1.0",
-    "tile-rack": "^0.2.1"
+    "tile-rack": "^0.2.1",
+    "vector-map": "file:../vector-map"
   },
   "keywords": [
     "webgl",
@@ -27,7 +28,7 @@
     "reprojection"
   ],
   "dependencies": {
-    "yawgl": "^0.1.2"
+    "yawgl": "^0.2.0"
   },
   "name": "satellite-view",
   "description": "Re-project a map to a globe with WebGL",
