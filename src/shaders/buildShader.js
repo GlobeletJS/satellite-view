@@ -6,7 +6,6 @@ import dither2x2 from "./dither2x2.glsl";
 import fragMain from "./frag.glsl";
 
 const header = `
-#extension GL_OES_standard_derivatives : enable
 precision highp float;
 precision highp sampler2D;
 

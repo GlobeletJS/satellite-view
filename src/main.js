@@ -6,8 +6,7 @@ import { getWebMercatorFactors } from "./proj-factors.js";
 export function init(userParams) {
   const params = setParams(userParams);
 
-  const gl = params.canvas.getContext("webgl");
-  gl.getExtension('OES_standard_derivatives');
+  const gl = yawgl.getExtendedContext(params.canvas);
 
   // Initialize shader program
   const shaders = buildShader(params.nMaps);
