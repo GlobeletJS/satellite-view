@@ -5,14 +5,15 @@ import { getWebMercatorFactors } from "./proj-factors.js";
 
 export function init(userParams) {
   const params = setParams(userParams);
-
-  const gl = yawgl.getExtendedContext(params.canvas);
+  const gl = params.gl;
 
   // Initialize shader program
   const shaders = buildShader(params.nMaps);
+  // TODO: use yawgl.initProgram
   const progInfo = yawgl.initShaderProgram(gl, shaders.vert, shaders.frag);
 
   // Load data into GPU for shaders: attribute buffers, indices, textures
+  // TODO: use the constructVao method returned by yawgl.initProgram
   const buffers = yawgl.initQuadBuffers(gl);
   const textures = params.maps.map(map => {
     return yawgl.initTexture(gl, map.canvas.width, map.canvas.height);
@@ -47,6 +48,7 @@ export function init(userParams) {
     uniforms.uMaxRay.set(maxRayTan);
 
     // Set uniforms and update textures for each map
+    // TODO: use a framebuffer if the map is WebGL?
     params.maps.forEach( (map, index) => {
       uniforms.uCamMapPos.set(map.camPos, 2 * index);
       uniforms.uMapScales.set(map.scale, 2 * index);
@@ -54,6 +56,7 @@ export function init(userParams) {
     });
 
     // Draw the globe
+    // TODO: use the setupDraw method returned by yawgl.initProgram
     var resized = yawgl.resizeCanvasToDisplaySize(
       gl.canvas, params.getPixelRatio() );
     yawgl.drawScene(gl, progInfo, buffers, uniforms);

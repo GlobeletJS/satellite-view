@@ -1,3 +1,5 @@
+import * as yawgl from 'yawgl';
+
 export function setParams(userParams) {
   const params = {};
 
@@ -13,18 +15,23 @@ export function setParams(userParams) {
   params.maps = Array.isArray(userParams.map)
     ? userParams.map
     : [userParams.map];
-
   params.nMaps = params.maps.length;
-  params.canvas = addCanvas(userParams.container);
+
+  if (userParams.gl instanceof WebGLRenderingContext) {
+    params.gl = userParams.gl;
+  } else {
+    const canvas = addCanvas(userParams.container);
+    params.gl = yawgl.getExtendedContext(canvas);
+  }
 
   return params;
 }
 
 // Fill a supplied DIV with a background Canvas for rendering
 function addCanvas(parentElement) {
-  var child = document.createElement('canvas');
-  // Could use Object.assign, but not supported by Android Webview?
-  setStyles(child, {
+  const child = document.createElement('canvas');
+
+  Object.assign(child.style, {
     "width": "100%",
     "height": "100%",
     "display": "inline-block",
@@ -33,13 +40,7 @@ function addCanvas(parentElement) {
     "left": 0,
     "z-index": 0,
   });
+
   parentElement.appendChild(child);
   return child;
-}
-
-function setStyles(element, styles) {
-  Object.keys(styles).forEach(key => {
-    element.style[key] = styles[key];
-  });
-  return element;
 }
