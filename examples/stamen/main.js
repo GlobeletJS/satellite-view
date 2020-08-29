@@ -1,6 +1,6 @@
 'use strict';
 
-import { initView } from 'yawgl';
+import * as yawgl from 'yawgl';
 import { initMaps } from "./map.js";
 import * as satelliteView from "../../dist/satellite-view.bundle.js";
 const degrees = 180.0 / Math.PI;
@@ -19,14 +19,16 @@ export function main() {
 
   // Get links to lon/lat/alt inputs and display div
   const coordInput = document.getElementById("coordInput");
-  const container = document.getElementById("globe");
-  const view = initView(container, 25.0);
+
+  const canvas = document.getElementById("globe");
+  const view = yawgl.initView(canvas, 25.0);
+  const gl = yawgl.getExtendedContext(canvas);
 
   // Setup coordinates interaction
   maps = initMaps(mapParams);
 
   const renderer = satelliteView.init({
-    container: container, 
+    gl, 
     globeRadius: radius,
     map: maps.textures,
   });

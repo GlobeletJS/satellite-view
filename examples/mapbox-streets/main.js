@@ -18,20 +18,8 @@ function setup(map) {
   // Get links to lon/lat/alt inputs and display div
   const coordInput = document.getElementById("coordInput");
 
-  const container = document.getElementById("globe");
-  const view = yawgl.initView(container, 25.0);
-
-  const canvas = document.createElement('canvas');
-  Object.assign(canvas.style, {
-    "width": "100%",
-    "height": "100%",
-    "display": "inline-block",
-    "position": "absolute",
-    "top": 0,
-    "left": 0,
-    "z-index": 0,
-  });
-  container.appendChild(canvas);
+  const canvas = document.getElementById("globe");
+  const view = yawgl.initView(canvas, 25.0);
   const gl = yawgl.getExtendedContext(canvas);
 
   const renderer = satelliteView.init({

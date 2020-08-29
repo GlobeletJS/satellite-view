@@ -26,12 +26,8 @@ import * as satelliteView from 'satellite-view';
 
 ## Initialization
 satelliteView.init takes a parameters object with the following properties:
-- container: (REQUIRED) An HTML element where the globe will be displayed. 
-  Note: an HTML Canvas will be appended as a child of this container, with the 
-  following styles:
-  - width: 100%;
-  - height: 100%;
-  - z-index: 0;
+- gl: (REQUIRED) An extended WebGL rendering context, as returned by the 
+  getExtendedContext method from [yawgl]
 - globeRadius: The (floating point) radius of the spherical Earth. Units must
   match the units of the altitude in the camPos array supplied to the draw
   method. Default: 6371 (km).
@@ -51,6 +47,7 @@ satelliteView.init takes a parameters object with the following properties:
   will remain constant across draw calls. The default behavior will update
   the pixel ratio when window.devicePixelRatio changes
 
+[yawgl]: https://github.com/GlobeletJS/yawgl
 [drawingbuffer size]: https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/drawingBufferWidth
 [window.devicePixelRatio]: https://developer.mozilla.org/en-US/docs/Web/API/Window/devicePixelRatio
 
