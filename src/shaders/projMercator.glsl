@@ -19,5 +19,5 @@ vec2 projMercator(vec2 dLonLat) {
   float tandlat = smallTan( 0.5 * (dLonLat[1] + uLatErr) );
   float p = tandlat * uExpY0;
   float q = tandlat / uExpY0;
-  return vec2(dLonLat[0], log1plusX(-p) - log1plusX(q)) * ONEOVERTWOPI;
+  return vec2(dLonLat[0], log1plusX(q) - log1plusX(-p)) * ONEOVERTWOPI;
 }

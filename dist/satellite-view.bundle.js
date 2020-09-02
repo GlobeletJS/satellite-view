@@ -1,3 +1,31 @@
+function setParams(userParams) {
+  const {
+    gl,
+    pixelRatio,
+    globeRadius = 6371,
+    map,
+    flipY = false,
+  } = userParams;
+
+  const getPixelRatio = (pixelRatio)
+    ? () => userParams.pixelRatio
+    : () => window.devicePixelRatio;
+  // NOTE: getPixelRatio() returns the result of an object getter,
+  //       NOT the property value at the time of getPixelRatio definition
+  //  Thus, getPixelRatio will mirror any changes in the parent object
+
+  const maps = Array.isArray(map)
+    ? map
+    : [map];
+  const nMaps = maps.length;
+
+  if (!(gl instanceof WebGLRenderingContext)) {
+    throw("satellite-view: no valid WebGLRenderingContext!");
+  }
+
+  return { gl, getPixelRatio, globeRadius, maps, nMaps, flipY };
+}
+
 function resizeCanvasToDisplaySize(canvas, multiplier) {
   // Make sure the canvas drawingbuffer is the same size as the display
   // webglfundamentals.org/webgl/lessons/webgl-resizing-the-canvas.html
@@ -299,130 +327,6 @@ function prepCanvas(gl, port) {
   return;
 }
 
-function setupMipMaps(gl, target, width, height) {
-  // We are using WebGL1 (for compatibility with mobile browsers) which can't
-  // handle mipmapping for non-power-of-2 images. Maybe we should provide
-  // pre-computed mipmaps? see https://stackoverflow.com/a/21540856/10082269
-  if (isPowerOf2(width) && isPowerOf2(height)) {
-    gl.generateMipmap(target);
-    // Clamp to avoid wrapping around poles
-    // TODO: this may not work with circular coordinates?
-    gl.texParameteri(target, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  } else { // Turn off mipmapping 
-    gl.texParameteri(target, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    // Set wrapping to clamp to edge
-    gl.texParameteri(target, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(target, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  }
-  return;
-}
-
-function setTextureAnisotropy(gl, target) {
-  var ext = (
-      gl.getExtension('EXT_texture_filter_anisotropic') ||
-      gl.getExtension('MOZ_EXT_texture_filter_anisotropic') || 
-      gl.getExtension('WEBKIT_EXT_texture_filter_anisotropic')
-      );
-  if (ext) {
-    var maxAnisotropy = gl.getParameter(ext.MAX_TEXTURE_MAX_ANISOTROPY_EXT);
-    // BEWARE: this texParameterf call is slow on Intel integrated graphics.
-    // Avoid this entire function if at all possible.
-    gl.texParameterf(target, ext.TEXTURE_MAX_ANISOTROPY_EXT, 
-        maxAnisotropy);
-  }
-  return;
-}
-
-function isPowerOf2(value) {
-  // This trick uses bitwise operators.
-  // See https://stackoverflow.com/a/30924333/10082269
-  return value && !(value & (value - 1));
-  // For a better explanation, with some errors in the solution, see
-  // https://stackoverflow.com/a/30924360/10082269
-}
-
-function initTexture(gl, width, height) {
-  // Initializes a 2D texture object, extending the default gl.createTexture()
-  // The GL context and the binding target are implicitly saved in the closure.
-  // Returns the sampler (as a property) along with update and replace methods.
-  // Input data is an ImageData object
-
-  const target = gl.TEXTURE_2D;
-  const texture = gl.createTexture();
-  gl.bindTexture(target, texture);
-
-  // Initialize with default parameters
-  const level = 0;  // Mipmap level
-  const internalFormat = gl.RGBA;
-  const srcFormat = gl.RGBA;
-  const srcType = gl.UNSIGNED_BYTE;
-  const border = 0;
-
-  gl.texImage2D(target, level, internalFormat, width, height, border,
-      srcFormat, srcType, null);
-
-  // Set up mipmapping and anisotropic filtering, if appropriate
-  setupMipMaps(gl, target, width, height);
-  setTextureAnisotropy(gl, target);
-
-  return {
-    sampler: texture,
-    replace,
-    update,
-  }
-
-  function replace( image ) {
-    // Replaces the texture with the supplied image data
-    // WARNING: will change texture width/height to match the image
-    gl.bindTexture(target, texture);
-    gl.texImage2D(target, level, internalFormat, srcFormat, srcType, image);
-
-    // Re-do mipmap setup, since width/height may have changed
-    setupMipMaps(gl, target, image.width, image.height);
-    return;
-  }
-
-  function update( image ) {
-    // Updates a portion of the texture with the supplied image data.
-    gl.bindTexture(target, texture);
-
-    // Image will be written starting from the pixel (xoffset, yoffset).
-    // If these values are not set on the input, use (0,0)
-    var xoff = image.xoffset || 0;
-    var yoff = image.yoffset || 0;
-    gl.texSubImage2D(target, level, xoff, yoff, srcFormat, srcType, image);
-
-    setupMipMaps(gl, target, image.width, image.height);
-    return;
-  }
-}
-
-function setParams(userParams) {
-  const params = {};
-
-  params.getPixelRatio = (userParams.pixelRatio)
-    ? () => userParams.pixelRatio
-    : () => window.devicePixelRatio;
-  // NOTE: getPixelRatio() returns the result of an object getter,
-  //       NOT the property value at the time of getPixelRatio definition
-  //  Thus, getPixelRatio will mirror any changes in the parent object
-
-  params.globeRadius = userParams.globeRadius || 6371;
-
-  params.maps = Array.isArray(userParams.map)
-    ? userParams.map
-    : [userParams.map];
-  params.nMaps = params.maps.length;
-
-  if (userParams.gl instanceof WebGLRenderingContext) {
-    params.gl = userParams.gl;
-  } else {
-    throw("satellite-view: no valid WebGLRenderingContext!");
-  }
-
-  return params;
-}
-
 var vertexSrc = `attribute vec4 aVertexPosition;
 uniform vec2 uMaxRay;
 
@@ -478,7 +382,7 @@ vec2 projMercator(vec2 dLonLat) {
   float tandlat = smallTan( 0.5 * (dLonLat[1] + uLatErr) );
   float p = tandlat * uExpY0;
   float q = tandlat / uExpY0;
-  return vec2(dLonLat[0], log1plusX(-p) - log1plusX(q)) * ONEOVERTWOPI;
+  return vec2(dLonLat[0], log1plusX(q) - log1plusX(-p)) * ONEOVERTWOPI;
 }
 `;
 
@@ -662,14 +566,11 @@ function init(userParams) {
   // Load data into GPU for shaders: attribute buffers, indices, textures
   // TODO: use the constructVao method returned by yawgl.initProgram
   const buffers = initQuadBuffers(gl);
-  const textures = params.maps.map(map => {
-    return initTexture(gl, map.canvas.width, map.canvas.height);
-  });
 
   // Store links to uniform arrays
   const uniforms = {
     uMaxRay: new Float64Array(2),
-    uTextureSampler: textures.map(tx => tx.sampler),
+    uTextureSampler: params.maps.map(tx => tx.sampler),
     uCamMapPos: new Float64Array(2 * params.nMaps),
     uMapScales: new Float64Array(2 * params.nMaps),
   };
@@ -681,9 +582,7 @@ function init(userParams) {
     destroy: () => gl.canvas.remove(),
   };
 
-  function draw(camPos, maxRayTan, camMoving) {
-    if (!camMoving && !params.maps.some(map => map.changed)) return;
-
+  function draw(camPos, maxRayTan) {
     // Update uniforms related to camera position
     uniforms.uHnorm = camPos[2] / params.globeRadius;
     uniforms.uLat0 = camPos[1];
@@ -695,17 +594,20 @@ function init(userParams) {
     uniforms.uMaxRay.set(maxRayTan);
 
     // Set uniforms and update textures for each map
-    // TODO: use a framebuffer if the map is WebGL?
     params.maps.forEach( (map, index) => {
-      uniforms.uCamMapPos.set(map.camPos, 2 * index);
+      // Flip orientation of Y, from Canvas2D to WebGL orientation
+      let tmp = [map.camPos[0], 1.0 - map.camPos[1]];
+      uniforms.uCamMapPos.set(tmp, 2 * index);
       uniforms.uMapScales.set(map.scale, 2 * index);
-      if (map.changed) textures[index].update(map.canvas);
     });
 
     // Draw the globe
-    // TODO: use the setupDraw method returned by yawgl.initProgram
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, params.flipY);
+
     var resized = resizeCanvasToDisplaySize(
       gl.canvas, params.getPixelRatio() );
+    // TODO: use the setupDraw method returned by yawgl.initProgram
     drawScene(gl, progInfo, buffers, uniforms);
     return resized;
   }

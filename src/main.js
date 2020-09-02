@@ -15,14 +15,11 @@ export function init(userParams) {
   // Load data into GPU for shaders: attribute buffers, indices, textures
   // TODO: use the constructVao method returned by yawgl.initProgram
   const buffers = yawgl.initQuadBuffers(gl);
-  const textures = params.maps.map(map => {
-    return yawgl.initTexture(gl, map.canvas.width, map.canvas.height);
-  });
 
   // Store links to uniform arrays
   const uniforms = {
     uMaxRay: new Float64Array(2),
-    uTextureSampler: textures.map(tx => tx.sampler),
+    uTextureSampler: params.maps.map(tx => tx.sampler),
     uCamMapPos: new Float64Array(2 * params.nMaps),
     uMapScales: new Float64Array(2 * params.nMaps),
   };
@@ -34,9 +31,7 @@ export function init(userParams) {
     destroy: () => gl.canvas.remove(),
   };
 
-  function draw(camPos, maxRayTan, camMoving) {
-    if (!camMoving && !params.maps.some(map => map.changed)) return;
-
+  function draw(camPos, maxRayTan) {
     // Update uniforms related to camera position
     uniforms.uHnorm = camPos[2] / params.globeRadius;
     uniforms.uLat0 = camPos[1];
@@ -48,17 +43,20 @@ export function init(userParams) {
     uniforms.uMaxRay.set(maxRayTan);
 
     // Set uniforms and update textures for each map
-    // TODO: use a framebuffer if the map is WebGL?
     params.maps.forEach( (map, index) => {
-      uniforms.uCamMapPos.set(map.camPos, 2 * index);
+      // Flip orientation of Y, from Canvas2D to WebGL orientation
+      let tmp = [map.camPos[0], 1.0 - map.camPos[1]];
+      uniforms.uCamMapPos.set(tmp, 2 * index);
       uniforms.uMapScales.set(map.scale, 2 * index);
-      if (map.changed) textures[index].update(map.canvas);
     });
 
     // Draw the globe
-    // TODO: use the setupDraw method returned by yawgl.initProgram
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, params.flipY);
+
     var resized = yawgl.resizeCanvasToDisplaySize(
       gl.canvas, params.getPixelRatio() );
+    // TODO: use the setupDraw method returned by yawgl.initProgram
     yawgl.drawScene(gl, progInfo, buffers, uniforms);
     return resized;
   }

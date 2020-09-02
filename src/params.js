@@ -1,27 +1,27 @@
-import * as yawgl from 'yawgl';
-
 export function setParams(userParams) {
-  const params = {};
+  const {
+    gl,
+    pixelRatio,
+    globeRadius = 6371,
+    map,
+    flipY = false,
+  } = userParams;
 
-  params.getPixelRatio = (userParams.pixelRatio)
+  const getPixelRatio = (pixelRatio)
     ? () => userParams.pixelRatio
     : () => window.devicePixelRatio;
   // NOTE: getPixelRatio() returns the result of an object getter,
   //       NOT the property value at the time of getPixelRatio definition
   //  Thus, getPixelRatio will mirror any changes in the parent object
 
-  params.globeRadius = userParams.globeRadius || 6371;
+  const maps = Array.isArray(map)
+    ? map
+    : [map];
+  const nMaps = maps.length;
 
-  params.maps = Array.isArray(userParams.map)
-    ? userParams.map
-    : [userParams.map];
-  params.nMaps = params.maps.length;
-
-  if (userParams.gl instanceof WebGLRenderingContext) {
-    params.gl = userParams.gl;
-  } else {
+  if (!(gl instanceof WebGLRenderingContext)) {
     throw("satellite-view: no valid WebGLRenderingContext!");
   }
 
-  return params;
+  return { gl, getPixelRatio, globeRadius, maps, nMaps, flipY };
 }

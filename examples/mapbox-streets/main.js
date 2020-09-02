@@ -8,24 +8,28 @@ const degrees = 180.0 / Math.PI;
 const radius = 6371;
 
 export function main() {
-  initMap().then(setup).catch(console.log);
+  const canvas = document.getElementById("globe");
+  const gl = yawgl.getExtendedContext(canvas);
+
+  initMap(gl)
+    .then(map => setup(map, gl))
+    .catch(console.log);
 }
 
-function setup(map) {
+function setup(map, gl) {
   var requestID;
   const camPosition = new Float64Array(3);
 
   // Get links to lon/lat/alt inputs and display div
   const coordInput = document.getElementById("coordInput");
 
-  const canvas = document.getElementById("globe");
-  const view = yawgl.initView(canvas, 25.0);
-  const gl = yawgl.getExtendedContext(canvas);
+  const view = yawgl.initView(gl.canvas, 25.0);
 
   const renderer = satelliteView.init({
     gl,
     globeRadius: radius,
     map: map.texture,
+    flipY: false,
   });
 
   coordInput.addEventListener("input", getCoords, false);
@@ -44,8 +48,7 @@ function setup(map) {
 
   function animate(time) {
     let resized = view.changed();
-    map.setPosition(camPosition, radius, view);
-    map.draw();
+    map.draw(camPosition, radius, view);
     renderer.draw(camPosition, view.maxRay, true);
 
     if (map.loaded() < 1.0) requestAnimationFrame(animate);

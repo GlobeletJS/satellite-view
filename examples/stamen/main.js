@@ -25,12 +25,13 @@ export function main() {
   const gl = yawgl.getExtendedContext(canvas);
 
   // Setup coordinates interaction
-  maps = initMaps(mapParams);
+  maps = initMaps(mapParams, gl);
 
   const renderer = satelliteView.init({
     gl, 
     globeRadius: radius,
     map: maps.textures,
+    flipY: true,
   });
 
   coordInput.addEventListener("input", getCoords, false);
@@ -51,7 +52,7 @@ export function main() {
     let resized = view.changed();
     maps.setPosition(camPosition, radius, view);
     maps.draw();
-    renderer.draw(camPosition, view.maxRay, true);
+    renderer.draw(camPosition, view.maxRay);
 
     if (maps.loaded() < 1.0) requestAnimationFrame(animate);
   }
