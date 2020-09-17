@@ -10,7 +10,7 @@ export function initMap(gl) {
   return vectorMap.init({
     gl,
     framebuffer: frame.buffer,
-    framebufferSize: frame.size,
+    size: frame.size,
     style: "mapbox://styles/mapbox/streets-v8",
     mapboxToken: "pk.eyJ1IjoiamhlbWJkIiwiYSI6ImNqcHpueHpyZjBlMjAzeG9kNG9oNzI2NTYifQ.K7fqhk2Z2YZ8NIV94M-5nA",
   }).promise.then(api => setup(api, frame.sampler))
@@ -19,7 +19,7 @@ export function initMap(gl) {
 
 function setup(api, sampler) {
   var loadStatus = 0;
-  const { gl, size } = api;
+  const gl = api.gl;
 
   // Construct the maps.textures object
   const texture = {
@@ -36,23 +36,22 @@ function setup(api, sampler) {
   };
 
   function draw(camPos, radius, view) {
-    const viewport = [size.width, size.height];
-
     // Get map zoom
     let dMap = camPos[2] / radius *        // Normalize to radius = 1
       view.topEdge() * 2 / view.height() * // ray tangent per pixel
       projection.scale(camPos);            // Scale assumes sphere radius = 1
 
     let k = 1.0 / dMap;
+    let zoom = Math.log2(k) - 9;
 
-    let [x, y] = projection
-      .lonLatToXY([], camPos)
-      .map((c, i) => (0.5 - c) * k + viewport[i] / 2);
+    let changed = api.setCenterZoom(camPos, zoom, 'radians');
+    loadStatus = api.draw();
 
-    loadStatus = api.draw({ k, x, y });
-
-    texture.scale[0] = 1.0 / (size.width * dMap);
-    texture.scale[1] = 1.0 / (size.height * dMap);
+    let scale = api.getScale();
+    texture.scale.set(scale);
+    let mapPos = api.getCamPos();
+    texture.camPos.set(mapPos);
+    console.log("scale, camPos = " + scale + ", " + mapPos);
 
     // Update mipmaps
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
