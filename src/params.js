@@ -17,11 +17,10 @@ export function setParams(userParams) {
   const maps = Array.isArray(map)
     ? map
     : [map];
-  const nMaps = maps.length;
 
   if (!(gl instanceof WebGLRenderingContext)) {
     throw("satellite-view: no valid WebGLRenderingContext!");
   }
 
-  return { gl, getPixelRatio, globeRadius, maps, nMaps, flipY };
+  return { gl, getPixelRatio, globeRadius, maps, flipY };
 }

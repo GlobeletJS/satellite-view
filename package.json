@@ -28,7 +28,7 @@
     "reprojection"
   ],
   "dependencies": {
-    "yawgl": "^0.2.0"
+    "yawgl": "github:GlobeletJS/yawgl"
   },
   "name": "satellite-view",
   "description": "Re-project a map to a globe with WebGL",
