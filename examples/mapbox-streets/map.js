@@ -1,4 +1,4 @@
-import { initFramebuffer } from "./framebuffer.js";
+import { initFramebuffer } from 'yawgl';
 import * as tileSetter from 'tile-setter';
 
 export function initMap(gl) {
@@ -54,9 +54,9 @@ function setup(api, sampler) {
     // Update mipmaps
     const gl = api.gl;
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    //gl.bindTexture(gl.TEXTURE_2D, sampler);
-    //gl.generateMipmap(gl.TEXTURE_2D);
+    gl.bindTexture(gl.TEXTURE_2D, sampler);
+    gl.generateMipmap(gl.TEXTURE_2D);
     //gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    //gl.bindTexture(gl.TEXTURE_2D, null);
+    gl.bindTexture(gl.TEXTURE_2D, null);
   }
 }
