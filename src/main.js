@@ -5,23 +5,22 @@ const maxMercLat = 2.0 * Math.atan( Math.exp(Math.PI) ) - Math.PI / 2.0;
 
 export function init(userParams) {
   const params = setParams(userParams);
-  const { gl, maps, globeRadius } = params;
+  const { context, maps, globeRadius } = params;
 
   // Initialize shader program
   const shaders = buildShader(maps.length);
-  const program = yawgl.initProgram(gl, shaders.vert, shaders.frag);
+  const program = context.initProgram(shaders.vert, shaders.frag);
   const { uniformSetters: setters, constructVao } = program;
 
-  // Initialize VAO and indices
-  const buffers = yawgl.initQuadBuffers(gl);
-  const vao = constructVao(buffers);
-  const { vertexCount, type, offset } = buffers.indices;
+  // Initialize VAO
+  const aVertexPosition = context.initQuad();
+  const vao = constructVao({ attributes: { aVertexPosition } });
 
   return {
-    canvas: gl.canvas,
+    canvas: context.gl.canvas,
     draw,
     setPixelRatio: (ratio) => { params.getPixelRatio = () => ratio; },
-    destroy: () => gl.canvas.remove(),
+    destroy: () => context.gl.canvas.remove(),
   };
 
   function draw(camPos, maxRayTan) {
@@ -47,21 +46,14 @@ export function init(userParams) {
 
     // Draw the globe
     var resized = yawgl.resizeCanvasToDisplaySize(
-      gl.canvas, params.getPixelRatio() );
+      context.gl.canvas, params.getPixelRatio() );
 
-    // bindFramebufferAndSetViewport
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    context.bindFramebufferAndSetViewport();
 
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, params.flipY);
-    gl.disable(gl.SCISSOR_TEST);
+    context.gl.pixelStorei(context.gl.UNPACK_FLIP_Y_WEBGL, params.flipY);
 
-    gl.clearColor(0.0, 0.0, 0.0, 0.0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
-
-    gl.bindVertexArray(vao);
-    gl.drawElements(gl.TRIANGLES, vertexCount, type, offset);
-    gl.bindVertexArray(null);
+    context.clear();
+    context.draw({ vao });
 
     return resized;
   }

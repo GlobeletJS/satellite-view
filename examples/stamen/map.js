@@ -1,9 +1,8 @@
-import * as yawgl from 'yawgl';
 import { initRasterCache } from 'tile-rack';
 import { initClipMaps } from 'tile-frame';
 import * as projection from "./proj-mercator.js";
 
-export function initMaps(mapParams, gl) {
+export function initMaps(mapParams, context) {
   // Wrapper for maps. Handles projection of spherical coordinates
   const xy = new Float64Array(2);
   const tileSize = mapParams.tileSize;
@@ -18,8 +17,7 @@ export function initMaps(mapParams, gl) {
   // Add WebGL texture objects
   const textures = maps.textures.map(tx => {
     let { width, height } = tx.canvas;
-    tx.texture = yawgl.initTexture(gl, width, height);
-    tx.sampler = tx.texture.sampler;
+    tx.sampler = context.initTexture({ width, height });
     return tx;
   });
 
@@ -45,7 +43,8 @@ export function initMaps(mapParams, gl) {
   function draw() {
     maps.drawTiles();
     textures.forEach(tx => {
-      tx.texture.update(tx.canvas);
+      let { width, height } = tx.canvas;
+      tx.sampler = context.initTexture({ image: tx.canvas, width, height });
     });
     numCachedTiles = cache.trim(maps.tileDistance, 1.5);
   }

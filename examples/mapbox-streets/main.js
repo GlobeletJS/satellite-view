@@ -10,23 +10,24 @@ const radius = 6371;
 export function main() {
   const canvas = document.getElementById("globe");
   const gl = yawgl.getExtendedContext(canvas);
+  const context = yawgl.initContext(gl);
 
-  initMap(gl)
-    .then(map => setup(map, gl))
+  initMap(context)
+    .then(map => setup(map, context))
     .catch(console.log);
 }
 
-function setup(map, gl) {
+function setup(map, context) {
   var requestID;
   const camPosition = new Float64Array(3);
 
   // Get links to lon/lat/alt inputs and display div
   const coordInput = document.getElementById("coordInput");
 
-  const view = yawgl.initView(gl.canvas, 25.0);
+  const view = yawgl.initView(context.gl.canvas, 25.0);
 
   const renderer = satelliteView.init({
-    gl,
+    context,
     globeRadius: radius,
     map: map.texture,
     flipY: false,

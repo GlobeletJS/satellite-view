@@ -1,6 +1,6 @@
 export function setParams(userParams) {
   const {
-    gl,
+    context,
     pixelRatio,
     globeRadius = 6371,
     map,
@@ -18,9 +18,9 @@ export function setParams(userParams) {
     ? map
     : [map];
 
-  if (!(gl instanceof WebGLRenderingContext)) {
+  if (!context || !(context.gl instanceof WebGLRenderingContext)) {
     throw("satellite-view: no valid WebGLRenderingContext!");
   }
 
-  return { gl, getPixelRatio, globeRadius, maps, flipY };
+  return { context, getPixelRatio, globeRadius, maps, flipY };
 }

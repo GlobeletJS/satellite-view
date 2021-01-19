@@ -1,18 +1,15 @@
-import { initFramebuffer } from 'yawgl';
 import * as tileSetter from 'tile-setter';
 
-export function initMap(gl) {
+export function initMap(context) {
   // Wrapper for maps. Handles projection of spherical coordinates
-  const frame = initFramebuffer(gl, 1024, 1024);
+  const framebuffer = context.initFramebuffer({ width: 1024, height: 1024 });
 
   return tileSetter.init({
-    gl,
-    framebuffer: frame.buffer,
-    size: frame.size,
+    context, framebuffer,
     style: "./streets-v8-noInteractive.json",
     mapboxToken: "pk.eyJ1IjoiamhlbWJkIiwiYSI6ImNqcHpueHpyZjBlMjAzeG9kNG9oNzI2NTYifQ.K7fqhk2Z2YZ8NIV94M-5nA",
     units: "radians",
-  }).promise.then(api => setup(api, frame.sampler))
+  }).promise.then(api => setup(api, framebuffer.sampler))
     .catch(console.log);
 }
 
@@ -49,14 +46,12 @@ function setup(api, sampler) {
     texture.scale.set(scale);
     let mapPos = api.getCamPos();
     texture.camPos.set(mapPos);
-    console.log("scale, camPos = " + scale + ", " + mapPos);
 
     // Update mipmaps
     const gl = api.gl;
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.bindTexture(gl.TEXTURE_2D, sampler);
     gl.generateMipmap(gl.TEXTURE_2D);
-    //gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.bindTexture(gl.TEXTURE_2D, null);
   }
 }
