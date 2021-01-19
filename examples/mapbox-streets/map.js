@@ -9,11 +9,11 @@ export function initMap(context) {
     style: "./streets-v8-noInteractive.json",
     mapboxToken: "pk.eyJ1IjoiamhlbWJkIiwiYSI6ImNqcHpueHpyZjBlMjAzeG9kNG9oNzI2NTYifQ.K7fqhk2Z2YZ8NIV94M-5nA",
     units: "radians",
-  }).promise.then(api => setup(api, framebuffer.sampler))
+  }).promise.then(api => setup(api, context, framebuffer.sampler))
     .catch(console.log);
 }
 
-function setup(api, sampler) {
+function setup(api, context, sampler) {
   var loadStatus = 0;
 
   // Construct the maps.textures object
@@ -47,11 +47,6 @@ function setup(api, sampler) {
     let mapPos = api.getCamPos();
     texture.camPos.set(mapPos);
 
-    // Update mipmaps
-    const gl = api.gl;
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    gl.bindTexture(gl.TEXTURE_2D, sampler);
-    gl.generateMipmap(gl.TEXTURE_2D);
-    gl.bindTexture(gl.TEXTURE_2D, null);
+    context.updateMips(sampler);
   }
 }

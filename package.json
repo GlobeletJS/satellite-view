@@ -19,7 +19,8 @@
     "rollup-plugin-node-resolve": "^5.2.0",
     "tile-frame": "^1.1.0",
     "tile-rack": "^0.2.1",
-    "tile-setter": "github:GlobeletJS/tile-setter"
+    "tile-setter": "github:GlobeletJS/tile-setter",
+    "yawgl": "github:GlobeletJS/yawgl"
   },
   "keywords": [
     "webgl",
@@ -27,9 +28,7 @@
     "satellite",
     "reprojection"
   ],
-  "dependencies": {
-    "yawgl": "github:GlobeletJS/yawgl"
-  },
+  "dependencies": {},
   "name": "satellite-view",
   "description": "Re-project a map to a globe with WebGL",
   "main": "dist/satellite-view.bundle.js",

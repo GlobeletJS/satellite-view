@@ -1,5 +1,4 @@
 import { setParams } from "./params.js";
-import * as yawgl from 'yawgl';
 import { buildShader } from "./shaders/buildShader.js";
 const maxMercLat = 2.0 * Math.atan( Math.exp(Math.PI) ) - Math.PI / 2.0;
 
@@ -45,8 +44,7 @@ export function init(userParams) {
     setters.uTextureSampler(maps.map(m => m.sampler));
 
     // Draw the globe
-    var resized = yawgl.resizeCanvasToDisplaySize(
-      context.gl.canvas, params.getPixelRatio() );
+    const resized = context.resizeCanvasToDisplaySize(params.getPixelRatio());
 
     context.bindFramebufferAndSetViewport();
 
