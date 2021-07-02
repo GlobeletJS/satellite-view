@@ -26,8 +26,8 @@ import * as satelliteView from 'satellite-view';
 
 ## Initialization
 satelliteView.init takes a parameters object with the following properties:
-- gl: (REQUIRED) An extended WebGL rendering context, as returned by the 
-  getExtendedContext method from [yawgl]
+- context: (REQUIRED) An extended WebGL rendering context, as returned by the 
+  initContext method from [yawgl][]
 - globeRadius: The (floating point) radius of the spherical Earth. Units must
   match the units of the altitude in the camPos array supplied to the draw
   method. Default: 6371 (km).
@@ -43,7 +43,7 @@ satelliteView.init takes a parameters object with the following properties:
     since the last draw call
 - pixelRatio: Ratio of the pixel size of the rendered image ([drawingbuffer
   size]) to the CSS display size of the container. Default:
-  [window.devicePixelRatio]. Note: if a value is supplied, the pixel ratio
+  [window.devicePixelRatio][]. Note: if a value is supplied, the pixel ratio
   will remain constant across draw calls. The default behavior will update
   the pixel ratio when window.devicePixelRatio changes
 

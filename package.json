@@ -15,12 +15,12 @@
   "author": "Jeshurun Hembd",
   "license": "MIT",
   "devDependencies": {
-    "rollup": "^2.4.0",
-    "rollup-plugin-node-resolve": "^5.2.0",
+    "@rollup/plugin-node-resolve": "^13.0.0",
+    "rollup": "^2.52.7",
     "tile-frame": "^1.1.0",
     "tile-rack": "^0.2.1",
-    "tile-setter": "github:GlobeletJS/tile-setter",
-    "yawgl": "github:GlobeletJS/yawgl"
+    "tile-setter": "^0.0.6",
+    "yawgl": "^0.3.1"
   },
   "keywords": [
     "webgl",
@@ -28,11 +28,10 @@
     "satellite",
     "reprojection"
   ],
-  "dependencies": {},
   "name": "satellite-view",
   "description": "Re-project a map to a globe with WebGL",
-  "main": "dist/satellite-view.bundle.js",
-  "module": "dist/satellite-view.bundle.js",
+  "main": "dist/satellite-view.js",
+  "module": "dist/satellite-view.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/GlobeletJS/satellite-view.git"

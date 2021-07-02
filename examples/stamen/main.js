@@ -2,7 +2,7 @@
 
 import * as yawgl from 'yawgl';
 import { initMaps } from "./map.js";
-import * as satelliteView from "../../dist/satellite-view.bundle.js";
+import * as satelliteView from "../../";
 const degrees = 180.0 / Math.PI;
 
 const mapParams = {
