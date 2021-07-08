@@ -19,7 +19,7 @@ export function setParams(userParams) {
     : [map];
 
   if (!context || !(context.gl instanceof WebGLRenderingContext)) {
-    throw("satellite-view: no valid WebGLRenderingContext!");
+    throw "satellite-view: no valid WebGLRenderingContext!";
   }
 
   return { context, getPixelRatio, globeRadius, maps, flipY };

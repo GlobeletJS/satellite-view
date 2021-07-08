@@ -1,5 +1,7 @@
 # satellite-view
 
+![tests](https://github.com/GlobeletJS/satellite-view/actions/workflows/node.js.yml/badge.svg)
+
 Re-project a map to a globe with WebGL
 
 The latitude and longitude under each pixel is computed via the inverse

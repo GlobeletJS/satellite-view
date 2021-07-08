@@ -25,7 +25,7 @@ export function buildShader(nLod) {
   const texLookupSrc = texLookup(args);
 
   // Combine the GLSL-snippets into one shader source
-  const fragmentSrc = header + invertSrc + projectSrc + 
+  const fragmentSrc = header + invertSrc + projectSrc +
     texLookupSrc + dither2x2 + fragMain;
 
   return {
@@ -37,7 +37,7 @@ export function buildShader(nLod) {
 function buildSelector(n) {
   // In the texLookup code, add lines to check each of the supplied textures,
   // and sample the highest LOD that contains the current coordinate
-  var selector = ``;
+  var selector = ``; // eslint-disable-line quotes
   while (--n) selector += `inside(coords[${n}])
     ? texture2D(samplers[${n}], coords[${n}])
     : `;
