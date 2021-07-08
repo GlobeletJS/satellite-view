@@ -30,6 +30,7 @@ jobs:
       # https://github.com/actions/setup-node/issues/214#issuecomment-810829250
       run: >
         git config --global url."https://github.com/".insteadOf
-        ssh://git@github.com/    - run: npm ci
+        ssh://git@github.com/
+    - run: npm ci
     - run: npm run build --if-present
     - run: npm test
