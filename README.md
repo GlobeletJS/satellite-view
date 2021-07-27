@@ -68,4 +68,4 @@ Initialization returns an object with the following properties and methods:
       - maxRayTan[1] = tan(FOV_y / 2)
   - camMoving: a (Boolean) flag indicating whether the camera position has
     changed since the last draw call
-- `setDevicePixelRatio(ratio)`: sets pixelRatio to the supplied constant value
+- `setPixelRatio(ratio)`: sets device pixelRatio to the supplied constant value

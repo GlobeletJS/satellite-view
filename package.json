@@ -17,12 +17,12 @@
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^13.0.0",
     "eslint": "^7.30.0",
-    "eslint-config-globeletjs": "^0.0.5",
+    "eslint-config-globeletjs": "^0.0.6",
     "rollup": "^2.52.7",
     "tile-frame": "^1.1.0",
     "tile-rack": "^0.2.1",
-    "tile-setter": "^0.0.7",
-    "yawgl": "^0.3.2"
+    "tile-setter": "^0.0.8",
+    "yawgl": "^0.3.3"
   },
   "keywords": [
     "webgl",

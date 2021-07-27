@@ -37,7 +37,7 @@ export function buildShader(nLod) {
 function buildSelector(n) {
   // In the texLookup code, add lines to check each of the supplied textures,
   // and sample the highest LOD that contains the current coordinate
-  var selector = ``; // eslint-disable-line quotes
+  let selector = ``; // eslint-disable-line quotes
   while (--n) selector += `inside(coords[${n}])
     ? texture2D(samplers[${n}], coords[${n}])
     : `;
