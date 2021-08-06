@@ -21,7 +21,7 @@
     "rollup": "^2.52.7",
     "tile-frame": "^1.1.0",
     "tile-rack": "^0.2.1",
-    "tile-setter": "^0.0.8",
+    "tile-setter": "^0.0.9",
     "yawgl": "^0.3.3"
   },
   "keywords": [

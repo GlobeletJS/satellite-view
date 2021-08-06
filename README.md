@@ -28,12 +28,12 @@ import * as satelliteView from 'satellite-view';
 
 ## Initialization
 satelliteView.init takes a parameters object with the following properties:
-- context: (REQUIRED) An extended WebGL rendering context, as returned by the 
+- `context`: (REQUIRED) An extended WebGL rendering context, as returned by the
   initContext method from [yawgl][]
-- globeRadius: The (floating point) radius of the spherical Earth. Units must
+- `globeRadius`: The (floating point) radius of the spherical Earth. Units must
   match the units of the altitude in the camPos array supplied to the draw
   method. Default: 6371 (km).
-- map: (REQUIRED) An object with the following properties, OR an array of
+- `map`: (REQUIRED) An object with the following properties, OR an array of
   objects where each element has the following properties:
   - canvas: an HTML Canvas element containing a map image
   - camPos: a 2-element array containing the map coordinates of the camera
@@ -43,11 +43,13 @@ satelliteView.init takes a parameters object with the following properties:
     to a map covering the whole world
   - changed: a (Boolean) flag indicating whether the map image has changed
     since the last draw call
-- pixelRatio: Ratio of the pixel size of the rendered image ([drawingbuffer
+- `pixelRatio`: Ratio of the pixel size of the rendered image ([drawingbuffer
   size]) to the CSS display size of the container. Default:
   [window.devicePixelRatio][]. Note: if a value is supplied, the pixel ratio
   will remain constant across draw calls. The default behavior will update
   the pixel ratio when window.devicePixelRatio changes
+- `units`: Specify "degrees" or "radians" as the units of the longitude and
+  latitude in the camPos argument of any future draw calls. Default: "radians"
 
 [yawgl]: https://github.com/GlobeletJS/yawgl
 [drawingbuffer size]: https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/drawingBufferWidth
@@ -59,8 +61,8 @@ Initialization returns an object with the following properties and methods:
 - `draw(camPos, maxRayTan, camMoving)`: Renders the globe on the Canvas. 
   Arguments:
   - camPos: a 3-element array containing the longitude, latitude, altitude of
-    the camera. Longitude and latitude are in radians. Altitude is in the same
-    units as the supplied globe radius.
+    the camera. Longitude and latitude are in the units specified on
+    initialization. Altitude is in the same units as the supplied globe radius.
   - maxRayTan: a 2-element array containing the maximum ray tangents at the
     corners of the camera sensor. The values are the tangents of half the field
     of view angles:

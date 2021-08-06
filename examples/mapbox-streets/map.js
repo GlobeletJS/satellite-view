@@ -1,4 +1,4 @@
-import * as tileSetter from 'tile-setter';
+import * as tileSetter from "tile-setter";
 
 export function initMap(context) {
   // Wrapper for maps. Handles projection of spherical coordinates
@@ -7,14 +7,15 @@ export function initMap(context) {
   return tileSetter.init({
     context, framebuffer,
     style: "./streets-v8-noInteractive.json",
+    // eslint-disable-next-line max-len
     mapboxToken: "pk.eyJ1IjoiamhlbWJkIiwiYSI6ImNqcHpueHpyZjBlMjAzeG9kNG9oNzI2NTYifQ.K7fqhk2Z2YZ8NIV94M-5nA",
-    units: "radians",
+    units: "degrees",
   }).promise.then(api => setup(api, context, framebuffer.sampler))
     .catch(console.log);
 }
 
 function setup(api, context, sampler) {
-  var loadStatus = 0;
+  let loadStatus = 0;
 
   // Construct the maps.textures object
   const texture = {
@@ -32,20 +33,18 @@ function setup(api, context, sampler) {
 
   function draw(camPos, radius, view) {
     // Get map zoom
-    let dMap = camPos[2] / radius *        // Normalize to radius = 1
+    const dMap = camPos[2] / radius *      // Normalize to radius = 1
       view.topEdge() * 2 / view.height() * // ray tangent per pixel
       api.projection.scale(camPos);
 
-    let k = 1.0 / dMap;
-    let zoom = Math.log2(k) - 9;
+    const k = 1.0 / dMap;
+    const zoom = Math.log2(k) - 9;
 
-    let changed = api.setCenterZoom(camPos, zoom);
+    api.setCenterZoom(camPos, zoom);
     loadStatus = api.draw();
 
-    let scale = api.getScale();
-    texture.scale.set(scale);
-    let mapPos = api.getCamPos();
-    texture.camPos.set(mapPos);
+    texture.scale.set(api.getScale());
+    texture.camPos.set(api.getCamPos());
 
     context.updateMips(sampler);
   }

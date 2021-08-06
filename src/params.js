@@ -5,7 +5,12 @@ export function setParams(userParams) {
     globeRadius = 6371,
     map,
     flipY = false,
+    units = "radians",
   } = userParams;
+
+  if (!context || !(context.gl instanceof WebGLRenderingContext)) {
+    throw "satellite-view: no valid WebGLRenderingContext!";
+  }
 
   const getPixelRatio = (pixelRatio)
     ? () => userParams.pixelRatio
@@ -14,13 +19,11 @@ export function setParams(userParams) {
   //       NOT the property value at the time of getPixelRatio definition
   //  Thus, getPixelRatio will mirror any changes in the parent object
 
-  const maps = Array.isArray(map)
-    ? map
-    : [map];
+  const maps = Array.isArray(map) ? map : [map];
 
-  if (!context || !(context.gl instanceof WebGLRenderingContext)) {
-    throw "satellite-view: no valid WebGLRenderingContext!";
-  }
+  const unitsPerRad = (units === "degrees")
+    ? 180.0 / Math.PI
+    : 1.0;
 
-  return { context, getPixelRatio, globeRadius, maps, flipY };
+  return { context, getPixelRatio, globeRadius, maps, flipY, unitsPerRad };
 }

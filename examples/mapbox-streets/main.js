@@ -1,9 +1,6 @@
-'use strict';
-
-import * as yawgl from 'yawgl';
+import * as yawgl from "yawgl";
 import { initMap } from "./map.js";
 import * as satelliteView from "../../";
-const degrees = 180.0 / Math.PI;
 
 const radius = 6371;
 
@@ -18,7 +15,7 @@ export function main() {
 }
 
 function setup(map, context) {
-  var requestID;
+  let requestID;
   const camPosition = new Float64Array(3);
 
   // Get links to lon/lat/alt inputs and display div
@@ -31,15 +28,16 @@ function setup(map, context) {
     globeRadius: radius,
     map: map.texture,
     flipY: false,
+    units: "degrees",
   });
 
   coordInput.addEventListener("input", getCoords, false);
   getCoords();
 
   function getCoords() {
-    let coords = coordInput.elements;
-    camPosition[0] = coords["lon"].value / degrees;
-    camPosition[1] = coords["lat"].value / degrees;
+    const coords = coordInput.elements;
+    camPosition[0] = coords["lon"].value;
+    camPosition[1] = coords["lat"].value;
     camPosition[2] = coords["alt"].value;
 
     // Start a rendering loop. Cancel running loops to avoid memory leaks
@@ -47,8 +45,8 @@ function setup(map, context) {
     requestID = requestAnimationFrame(animate);
   }
 
-  function animate(time) {
-    let resized = view.changed();
+  function animate() {
+    view.changed();
     map.draw(camPosition, radius, view);
     renderer.draw(camPosition, view.maxRay, true);
 

@@ -5,7 +5,12 @@ function setParams(userParams) {
     globeRadius = 6371,
     map,
     flipY = false,
+    units = "radians",
   } = userParams;
+
+  if (!context || !(context.gl instanceof WebGLRenderingContext)) {
+    throw "satellite-view: no valid WebGLRenderingContext!";
+  }
 
   const getPixelRatio = (pixelRatio)
     ? () => userParams.pixelRatio
@@ -14,15 +19,13 @@ function setParams(userParams) {
   //       NOT the property value at the time of getPixelRatio definition
   //  Thus, getPixelRatio will mirror any changes in the parent object
 
-  const maps = Array.isArray(map)
-    ? map
-    : [map];
+  const maps = Array.isArray(map) ? map : [map];
 
-  if (!context || !(context.gl instanceof WebGLRenderingContext)) {
-    throw "satellite-view: no valid WebGLRenderingContext!";
-  }
+  const unitsPerRad = (units === "degrees")
+    ? 180.0 / Math.PI
+    : 1.0;
 
-  return { context, getPixelRatio, globeRadius, maps, flipY };
+  return { context, getPixelRatio, globeRadius, maps, flipY, unitsPerRad };
 }
 
 var vertexSrc = `attribute vec4 aVertexPosition;
@@ -238,11 +241,12 @@ function buildSelector(n) {
   return selector;
 }
 
-const maxMercLat = 2.0 * Math.atan( Math.exp(Math.PI) ) - Math.PI / 2.0;
-
 function init(userParams) {
+  const { PI, cos, sin, tan, atan, exp, min, max } = Math;
+  const maxMercLat = 2.0 * atan(exp(PI)) - PI / 2.0;
+
   const params = setParams(userParams);
-  const { context, maps, globeRadius } = params;
+  const { context, maps, globeRadius, unitsPerRad } = params;
 
   // Initialize shader program
   const shaders = buildShader(maps.length);
@@ -264,15 +268,15 @@ function init(userParams) {
     program.use();
 
     // Set uniforms related to camera position
-    const lat = camPos[1];
+    const lat = camPos[1] / unitsPerRad;
     setters.uLat0(lat);
-    setters.uCosLat0(Math.cos(lat));
-    setters.uSinLat0(Math.sin(lat));
-    setters.uTanLat0(Math.tan(lat));
+    setters.uCosLat0(cos(lat));
+    setters.uSinLat0(sin(lat));
+    setters.uTanLat0(tan(lat));
 
-    const clipLat = Math.min(Math.max(-maxMercLat, lat), maxMercLat);
+    const clipLat = min(max(-maxMercLat, lat), maxMercLat);
     setters.uLatErr(lat - clipLat);
-    setters.uExpY0(Math.tan(Math.PI / 4 + clipLat / 2));
+    setters.uExpY0(tan(PI / 4 + clipLat / 2));
 
     setters.uHnorm(camPos[2] / globeRadius);
     setters.uMaxRay(maxRayTan);
@@ -283,11 +287,8 @@ function init(userParams) {
 
     // Draw the globe
     const resized = context.resizeCanvasToDisplaySize(params.getPixelRatio());
-
     context.bindFramebufferAndSetViewport();
-
     context.gl.pixelStorei(context.gl.UNPACK_FLIP_Y_WEBGL, params.flipY);
-
     context.clear();
     context.draw({ vao });
 
