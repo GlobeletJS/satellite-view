@@ -6,8 +6,7 @@ const radius = 6371;
 
 export function main() {
   const canvas = document.getElementById("globe");
-  const gl = yawgl.getExtendedContext(canvas);
-  const context = yawgl.initContext(gl);
+  const context = yawgl.initContext(canvas);
 
   initMap(context)
     .then(map => setup(map, context))

@@ -24,7 +24,7 @@ bool inside(vec2 pos) {
 }
 
 vec4 sampleLOD(sampler2D samplers[nLod], vec2 coords[nLod]) {
-  return ${args.buildSelector}texture2D(samplers[0], coords[0]);
+  return ${args.buildSelector}texture(samplers[0], coords[0]);
 }
 
 vec4 texLookup(vec2 dMerc) {

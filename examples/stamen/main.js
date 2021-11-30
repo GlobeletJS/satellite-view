@@ -22,14 +22,13 @@ export function main() {
 
   const canvas = document.getElementById("globe");
   const view = yawgl.initView(canvas, 25.0);
-  const gl = yawgl.getExtendedContext(canvas);
-  const context = yawgl.initContext(gl);
+  const context = yawgl.initContext(canvas);
 
   // Setup coordinates interaction
   maps = initMaps(mapParams, context);
 
   const renderer = satelliteView.init({
-    context, 
+    context,
     globeRadius: radius,
     map: maps.textures,
     flipY: true,

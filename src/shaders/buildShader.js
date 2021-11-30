@@ -5,7 +5,7 @@ import texLookup from "./texLookup.js.glsl";
 import dither2x2 from "./dither2x2.glsl";
 import fragMain from "./frag.glsl";
 
-const header = `
+const header = `#version 300 es
 precision highp float;
 precision highp sampler2D;
 
@@ -39,7 +39,7 @@ function buildSelector(n) {
   // and sample the highest LOD that contains the current coordinate
   let selector = ``; // eslint-disable-line quotes
   while (--n) selector += `inside(coords[${n}])
-    ? texture2D(samplers[${n}], coords[${n}])
+    ? texture(samplers[${n}], coords[${n}])
     : `;
   return selector;
 }

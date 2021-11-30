@@ -8,8 +8,8 @@ export function setParams(userParams) {
     units = "radians",
   } = userParams;
 
-  if (!context || !(context.gl instanceof WebGLRenderingContext)) {
-    throw "satellite-view: no valid WebGLRenderingContext!";
+  if (!context || !(context.gl instanceof WebGL2RenderingContext)) {
+    throw "satellite-view: no valid WebGL2RenderingContext!";
   }
 
   const getPixelRatio = (pixelRatio)

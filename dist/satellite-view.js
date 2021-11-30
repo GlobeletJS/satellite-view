@@ -8,8 +8,8 @@ function setParams(userParams) {
     units = "radians",
   } = userParams;
 
-  if (!context || !(context.gl instanceof WebGLRenderingContext)) {
-    throw "satellite-view: no valid WebGLRenderingContext!";
+  if (!context || !(context.gl instanceof WebGL2RenderingContext)) {
+    throw "satellite-view: no valid WebGL2RenderingContext!";
   }
 
   const getPixelRatio = (pixelRatio)
@@ -28,10 +28,13 @@ function setParams(userParams) {
   return { context, getPixelRatio, globeRadius, maps, flipY, unitsPerRad };
 }
 
-var vertexSrc = `attribute vec4 aVertexPosition;
+var vertexSrc = `#version 300 es
+
+in vec4 aVertexPosition;
+
 uniform vec2 uMaxRay;
 
-varying highp vec2 vRayParm;
+out highp vec2 vRayParm;
 
 void main(void) {
   vRayParm = uMaxRay * aVertexPosition.xy;
@@ -116,7 +119,7 @@ bool inside(vec2 pos) {
 }
 
 vec4 sampleLOD(sampler2D samplers[nLod], vec2 coords[nLod]) {
-  return ${args.buildSelector}texture2D(samplers[0], coords[0]);
+  return ${args.buildSelector}texture(samplers[0], coords[0]);
 }
 
 vec4 texLookup(vec2 dMerc) {
@@ -176,8 +179,9 @@ float horizonTaper(float gamma) {
   return 1.0 - smoothstep(1.0 - delta, 1.0, horizonRatio);
 }
 
-varying vec2 vRayParm;
+in vec2 vRayParm;
 uniform float uHnorm;
+out vec4 pixColor;
 
 void main(void) {
   // 0. Pre-compute some values
@@ -198,11 +202,11 @@ void main(void) {
 
   // Add cosine shading, dithering, and horizon tapering
   vec3 dithered = dither2x2(gl_FragCoord.xy, cosC * texelColor.rgb);
-  gl_FragColor = vec4(dithered.rgb, texelColor.a) * horizonTaper(gamma);
+  pixColor = vec4(dithered.rgb, texelColor.a) * horizonTaper(gamma);
 }
 `;
 
-const header = `
+const header = `#version 300 es
 precision highp float;
 precision highp sampler2D;
 
@@ -236,7 +240,7 @@ function buildSelector(n) {
   // and sample the highest LOD that contains the current coordinate
   let selector = ``; // eslint-disable-line quotes
   while (--n) selector += `inside(coords[${n}])
-    ? texture2D(samplers[${n}], coords[${n}])
+    ? texture(samplers[${n}], coords[${n}])
     : `;
   return selector;
 }

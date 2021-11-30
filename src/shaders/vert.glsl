@@ -1,7 +1,10 @@
-attribute vec4 aVertexPosition;
+#version 300 es
+
+in vec4 aVertexPosition;
+
 uniform vec2 uMaxRay;
 
-varying highp vec2 vRayParm;
+out highp vec2 vRayParm;
 
 void main(void) {
   vRayParm = uMaxRay * aVertexPosition.xy;

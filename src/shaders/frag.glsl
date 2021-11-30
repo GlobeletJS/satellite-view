@@ -13,8 +13,9 @@ float horizonTaper(float gamma) {
   return 1.0 - smoothstep(1.0 - delta, 1.0, horizonRatio);
 }
 
-varying vec2 vRayParm;
+in vec2 vRayParm;
 uniform float uHnorm;
+out vec4 pixColor;
 
 void main(void) {
   // 0. Pre-compute some values
@@ -35,5 +36,5 @@ void main(void) {
 
   // Add cosine shading, dithering, and horizon tapering
   vec3 dithered = dither2x2(gl_FragCoord.xy, cosC * texelColor.rgb);
-  gl_FragColor = vec4(dithered.rgb, texelColor.a) * horizonTaper(gamma);
+  pixColor = vec4(dithered.rgb, texelColor.a) * horizonTaper(gamma);
 }

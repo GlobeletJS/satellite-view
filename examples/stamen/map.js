@@ -51,6 +51,6 @@ export function initMaps(mapParams, context) {
 }
 
 function tileURL(z, x, y) {
-  const endpoint = "http://tile.stamen.com/toner-lite/{z}/{x}/{y}.png";
+  const endpoint = "https://stamen-tiles.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}.png";
   return endpoint.replace(/{z}/, z).replace(/{x}/, x).replace(/{y}/, y);
 }
