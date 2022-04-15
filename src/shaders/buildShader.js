@@ -39,7 +39,7 @@ function buildSelector(n) {
   // and sample the highest LOD that contains the current coordinate
   let selector = ``; // eslint-disable-line quotes
   while (--n) selector += `inside(coords[${n}])
-    ? texture(samplers[${n}], coords[${n}])
+    ? texture(uTextureSampler[${n}], coords[${n}])
     : `;
   return selector;
 }
